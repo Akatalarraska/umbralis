@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Umbralis.Abilities;
+using Umbralis.Combat;
 using Umbralis.Core;
 using Umbralis.Player;
 using Umbralis.TouchControls;
@@ -26,6 +28,7 @@ namespace Umbralis.EditorTools
         private const string RootFolder = "Assets/_Umbralis";
         private const string ScenesFolder = RootFolder + "/Scenes";
         private const string MaterialsFolder = RootFolder + "/Materials";
+        private const string DataFolder = RootFolder + "/Data";
         private const string ScenePath = ScenesFolder + "/CombatPrototype.unity";
 
         // Resolución de referencia del HUD. Los tamaños de UI (radio del joystick,
@@ -44,14 +47,19 @@ namespace Umbralis.EditorTools
         {
             EnsureFolder(ScenesFolder);
             EnsureFolder(MaterialsFolder);
+            EnsureFolder(DataFolder);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             CreateLight();
             CreateArena();
-            GameObject player = CreatePlayer();
+            AbilityDefinition[] abilities = CreateAbilityAssets();
+            GameObject player = CreatePlayer(abilities);
             GameObject camera = CreateCamera();
-            CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone);
+            CreateDummies();
+            AimIndicator aimIndicator = CreateAimIndicator();
+            CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
+            CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), aimIndicator);
             CreateEventSystem();
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
 
@@ -196,7 +204,7 @@ namespace Umbralis.EditorTools
             }
         }
 
-        private static GameObject CreatePlayer()
+        private static GameObject CreatePlayer(AbilityDefinition[] abilities)
         {
             Material playerMat = CreateMaterial("Player", new Color(0.25f, 0.55f, 0.95f));
             Material markerMat = CreateMaterial("PlayerMarker", new Color(0.95f, 0.85f, 0.2f));
@@ -210,6 +218,13 @@ namespace Umbralis.EditorTools
             controller.slopeLimit = 45f;
             controller.stepOffset = 0.3f;
             root.AddComponent<PlayerMovement>();
+
+            Health health = root.AddComponent<Health>();
+            SetEnum(health, "team", (int)Team.Player);
+            SetFloat(health, "maxHealth", 200f);
+
+            AbilityCaster caster = root.AddComponent<AbilityCaster>();
+            SetArray(caster, "slots", abilities);
 
             // Cuerpo: cápsula sin collider (el CharacterController ya hace de collider).
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -231,6 +246,140 @@ namespace Umbralis.EditorTools
             return root;
         }
 
+        // ------------------------------------------------------------------
+        // Combate: habilidades, muñecos e indicador de apuntado
+        // ------------------------------------------------------------------
+
+        /// <summary>Crea (o reutiliza) los assets de las cuatro habilidades de prueba en Data/.</summary>
+        private static AbilityDefinition[] CreateAbilityAssets()
+        {
+            var melee = LoadOrCreateAsset<MeleeAbility>("Melee");
+            melee.displayName = "Golpe";
+            melee.buttonColor = new Color(0.95f, 0.95f, 0.95f);
+            melee.cooldown = 0.5f;
+            melee.range = 2.5f;
+            melee.aimMode = AimMode.Direction;
+            melee.damage = 20f;
+            melee.coneDegrees = 100f;
+            melee.fxMaterial = CreateMaterial("FxMelee", new Color(1f, 1f, 0.8f));
+
+            var projectile = LoadOrCreateAsset<ProjectileAbility>("Projectile");
+            projectile.displayName = "Disparo";
+            projectile.buttonColor = new Color(1f, 0.6f, 0.2f);
+            projectile.cooldown = 2f;
+            projectile.range = 14f;
+            projectile.aimMode = AimMode.Direction;
+            projectile.damage = 30f;
+            projectile.speed = 18f;
+            projectile.fxMaterial = CreateMaterial("FxProjectile", new Color(1f, 0.5f, 0.1f));
+
+            var dash = LoadOrCreateAsset<DashAbility>("Dash");
+            dash.displayName = "Embestida";
+            dash.buttonColor = new Color(0.3f, 0.85f, 1f);
+            dash.cooldown = 4f;
+            dash.range = 5f;
+            dash.aimMode = AimMode.Direction;
+            dash.damage = 15f;
+            dash.duration = 0.2f;
+            dash.fxMaterial = CreateMaterial("FxDash", new Color(0.5f, 0.9f, 1f));
+
+            var blast = LoadOrCreateAsset<AreaBlastAbility>("AreaBlast");
+            blast.displayName = "Estallido";
+            blast.buttonColor = new Color(0.75f, 0.4f, 1f);
+            blast.cooldown = 6f;
+            blast.range = 8f;
+            blast.aimMode = AimMode.Point;
+            blast.damage = 40f;
+            blast.radius = 2.5f;
+            blast.fxMaterial = CreateMaterial("FxBlast", new Color(0.7f, 0.3f, 1f));
+
+            var all = new AbilityDefinition[] { melee, projectile, dash, blast };
+            foreach (AbilityDefinition a in all) EditorUtility.SetDirty(a);
+            AssetDatabase.SaveAssets();
+            return all;
+        }
+
+        private static void CreateDummies()
+        {
+            Material normal = CreateMaterial("Dummy", new Color(0.85f, 0.25f, 0.25f));
+            Material hit = CreateMaterial("DummyHit", Color.white);
+            Material barBg = CreateMaterial("HealthBarBackground", new Color(0.1f, 0.1f, 0.1f));
+            Material barFill = CreateMaterial("HealthBarFill", new Color(0.2f, 0.9f, 0.3f));
+
+            var parent = new GameObject("Dummies");
+            Vector3[] positions = { new Vector3(0f, 0f, 6f), new Vector3(8f, 0f, -3f), new Vector3(-8f, 0f, -1f) };
+            foreach (Vector3 position in positions)
+            {
+                var root = new GameObject("TrainingDummy");
+                root.transform.SetParent(parent.transform, false);
+                root.transform.position = position;
+                root.transform.rotation = Quaternion.LookRotation(-position.normalized, Vector3.up);
+
+                CharacterController controller = root.AddComponent<CharacterController>();
+                controller.height = 2f;
+                controller.radius = 0.5f;
+                controller.center = new Vector3(0f, 1f, 0f);
+
+                Health health = root.AddComponent<Health>();
+                SetEnum(health, "team", (int)Team.Enemy);
+                SetFloat(health, "maxHealth", 100f);
+
+                GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                body.name = "Body";
+                body.transform.SetParent(root.transform, false);
+                body.transform.localPosition = new Vector3(0f, 1f, 0f);
+                Object.DestroyImmediate(body.GetComponent<Collider>());
+                Renderer bodyRenderer = body.GetComponent<Renderer>();
+                bodyRenderer.sharedMaterial = normal;
+
+                TrainingDummy dummy = root.AddComponent<TrainingDummy>();
+                SetReference(dummy, "body", bodyRenderer);
+                SetReference(dummy, "normalMaterial", normal);
+                SetReference(dummy, "hitMaterial", hit);
+
+                // Barra de vida: dos cubos finos sobre la cabeza.
+                var bar = new GameObject("HealthBar");
+                bar.transform.SetParent(root.transform, false);
+                bar.transform.localPosition = new Vector3(0f, 2.4f, 0f);
+                CreateFlatCube("Background", bar.transform, barBg, new Vector3(1.2f, 0.12f, 0.02f));
+                GameObject fill = CreateFlatCube("Fill", bar.transform, barFill, new Vector3(1.2f, 0.1f, 0.02f));
+                fill.transform.localPosition = new Vector3(0f, 0f, -0.01f);
+                HealthBar healthBar = bar.AddComponent<HealthBar>();
+                SetReference(healthBar, "health", health);
+                SetReference(healthBar, "fill", fill.transform);
+            }
+        }
+
+        private static AimIndicator CreateAimIndicator()
+        {
+            Material aimMat = CreateMaterial("AimIndicator", new Color(1f, 0.9f, 0.2f));
+
+            var root = new GameObject("AimIndicator");
+            AimIndicator indicator = root.AddComponent<AimIndicator>();
+
+            GameObject strip = CreateFlatCube("DirectionStrip", root.transform, aimMat, new Vector3(0.6f, 0.02f, 4f));
+            GameObject disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            disc.name = "PointDisc";
+            disc.transform.SetParent(root.transform, false);
+            Object.DestroyImmediate(disc.GetComponent<Collider>());
+            disc.GetComponent<Renderer>().sharedMaterial = aimMat;
+
+            SetReference(indicator, "directionStrip", strip.transform);
+            SetReference(indicator, "pointDisc", disc.transform);
+            return indicator;
+        }
+
+        private static GameObject CreateFlatCube(string name, Transform parent, Material material, Vector3 scale)
+        {
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = name;
+            cube.transform.SetParent(parent, false);
+            cube.transform.localScale = scale;
+            Object.DestroyImmediate(cube.GetComponent<Collider>());
+            cube.GetComponent<Renderer>().sharedMaterial = material;
+            return cube;
+        }
+
         private static GameObject CreateCamera()
         {
             var go = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -248,9 +397,10 @@ namespace Umbralis.EditorTools
         // HUD
         // ------------------------------------------------------------------
 
-        private static void CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone)
+        private static void CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot)
         {
             var canvasGo = new GameObject("HUD", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            hudRoot = canvasGo.transform;
             canvasGo.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
 
             CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
@@ -272,6 +422,76 @@ namespace Umbralis.EditorTools
             // Mitad derecha: giro de cámara.
             GameObject rightZone = CreateZone("LookZone", canvasGo.transform, new Vector2(0.5f, 0f), new Vector2(1f, 1f));
             lookZone = rightZone.AddComponent<CameraLookZone>();
+        }
+
+        /// <summary>
+        /// Cuatro botones en la esquina inferior derecha. Van después de LookZone
+        /// en la jerarquía para quedar por encima y capturar sus propios toques.
+        /// </summary>
+        private static void CreateAbilityBar(Transform hudRoot, AbilityCaster caster, AimIndicator aimIndicator)
+        {
+            Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var bar = new GameObject("AbilityBar", typeof(RectTransform));
+            bar.transform.SetParent(hudRoot, false);
+            var barRt = bar.GetComponent<RectTransform>();
+            barRt.anchorMin = barRt.anchorMax = barRt.pivot = new Vector2(1f, 0f); // esquina inferior derecha
+            barRt.anchoredPosition = Vector2.zero;
+            barRt.sizeDelta = Vector2.zero;
+
+            // Posición (desde la esquina) y tamaño de cada ranura: la principal más grande.
+            (Vector2 pos, float size)[] layout =
+            {
+                (new Vector2(-190f, 190f), 210f),
+                (new Vector2(-440f, 150f), 150f),
+                (new Vector2(-400f, 380f), 150f),
+                (new Vector2(-200f, 450f), 150f),
+            };
+
+            for (int slot = 0; slot < layout.Length && slot < caster.SlotCount; slot++)
+            {
+                var go = new GameObject($"Ability{slot}", typeof(RectTransform), typeof(Image));
+                go.transform.SetParent(bar.transform, false);
+                var rt = go.GetComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = layout[slot].pos;
+                rt.sizeDelta = Vector2.one * layout[slot].size;
+
+                Image background = go.GetComponent<Image>();
+                background.sprite = knob;
+                background.raycastTarget = true;
+
+                // Sombra radial que se vacía con el enfriamiento.
+                Image overlay = CreateImage("Cooldown", go.transform, knob, layout[slot].size, new Color(0f, 0f, 0f, 0.6f));
+                overlay.type = Image.Type.Filled;
+                overlay.fillMethod = Image.FillMethod.Radial360;
+                overlay.fillOrigin = (int)Image.Origin360.Top;
+                overlay.fillClockwise = false;
+                overlay.fillAmount = 0f;
+
+                var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
+                labelGo.transform.SetParent(go.transform, false);
+                var labelRt = labelGo.GetComponent<RectTransform>();
+                labelRt.anchorMin = Vector2.zero;
+                labelRt.anchorMax = Vector2.one;
+                labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
+                Text label = labelGo.GetComponent<Text>();
+                label.font = font;
+                label.fontSize = 28;
+                label.alignment = TextAnchor.MiddleCenter;
+                label.color = new Color(0.1f, 0.1f, 0.1f);
+                label.raycastTarget = false;
+
+                AbilityButton button = go.AddComponent<AbilityButton>();
+                SetReference(button, "caster", caster);
+                SetInt(button, "slot", slot);
+                SetReference(button, "aimIndicator", aimIndicator);
+                SetReference(button, "background", background);
+                SetReference(button, "cooldownOverlay", overlay);
+                SetReference(button, "label", label);
+            }
         }
 
         /// <summary>Panel invisible que recibe toques en la porción de pantalla indicada.</summary>
@@ -348,8 +568,50 @@ namespace Umbralis.EditorTools
             return material;
         }
 
+        /// <summary>Carga el ScriptableObject de Data/ o lo crea si no existe.</summary>
+        private static T LoadOrCreateAsset<T>(string name) where T : ScriptableObject
+        {
+            string path = $"{DataFolder}/{name}.asset";
+            var existing = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (existing != null) return existing;
+
+            var asset = ScriptableObject.CreateInstance<T>();
+            AssetDatabase.CreateAsset(asset, path);
+            return asset;
+        }
+
         /// <summary>Asigna un campo [SerializeField] privado sin exponerlo como público.</summary>
         private static void SetReference(Object target, string fieldName, Object value)
+        {
+            SetProperty(target, fieldName, p => p.objectReferenceValue = value);
+        }
+
+        private static void SetInt(Object target, string fieldName, int value)
+        {
+            SetProperty(target, fieldName, p => p.intValue = value);
+        }
+
+        private static void SetEnum(Object target, string fieldName, int value)
+        {
+            SetProperty(target, fieldName, p => p.enumValueIndex = value);
+        }
+
+        private static void SetFloat(Object target, string fieldName, float value)
+        {
+            SetProperty(target, fieldName, p => p.floatValue = value);
+        }
+
+        private static void SetArray(Object target, string fieldName, Object[] values)
+        {
+            SetProperty(target, fieldName, p =>
+            {
+                p.arraySize = values.Length;
+                for (int i = 0; i < values.Length; i++)
+                    p.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            });
+        }
+
+        private static void SetProperty(Object target, string fieldName, System.Action<SerializedProperty> assign)
         {
             var serialized = new SerializedObject(target);
             SerializedProperty property = serialized.FindProperty(fieldName);
@@ -358,7 +620,7 @@ namespace Umbralis.EditorTools
                 Debug.LogError($"[Umbralis] No existe el campo '{fieldName}' en {target.GetType().Name}.");
                 return;
             }
-            property.objectReferenceValue = value;
+            assign(property);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

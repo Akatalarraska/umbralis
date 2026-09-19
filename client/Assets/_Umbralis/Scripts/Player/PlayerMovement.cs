@@ -39,6 +39,39 @@ namespace Umbralis.Player
         private CharacterController controller;
         private float verticalVelocity;
 
+        // Embestida en curso: velocidad fija que sustituye al input del joystick.
+        private Vector3 dashVelocity;
+        private float dashTimeLeft;
+
+        // Tras lanzar una habilidad el personaje mira hacia donde la lanzó un momento,
+        // aunque el joystick lo empuje hacia otro lado.
+        private Vector3 lockedFacing;
+        private float facingLockTimeLeft;
+
+        /// <summary>True mientras dura una embestida.</summary>
+        public bool IsDashing => dashTimeLeft > 0f;
+
+        /// <summary>Desplaza al personaje <paramref name="distance"/> metros en <paramref name="duration"/> segundos.</summary>
+        public void Dash(Vector3 direction, float distance, float duration)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f || duration <= 0f) return;
+            direction.Normalize();
+            dashVelocity = direction * (distance / duration);
+            dashTimeLeft = duration;
+            LockFacing(direction, duration);
+        }
+
+        /// <summary>Encara al personaje hacia <paramref name="direction"/> durante <paramref name="seconds"/>.</summary>
+        public void LockFacing(Vector3 direction, float seconds)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) return;
+            lockedFacing = direction.normalized;
+            facingLockTimeLeft = Mathf.Max(facingLockTimeLeft, seconds);
+            transform.rotation = Quaternion.LookRotation(lockedFacing, Vector3.up);
+        }
+
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
@@ -51,8 +84,12 @@ namespace Umbralis.Player
             Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
             MoveDirection = InputToWorld(input);
 
-            // Giro suave hacia la dirección de movimiento.
-            if (IsMoving)
+            if (facingLockTimeLeft > 0f)
+            {
+                facingLockTimeLeft -= Time.deltaTime;
+                transform.rotation = Quaternion.LookRotation(lockedFacing, Vector3.up);
+            }
+            else if (IsMoving) // giro suave hacia la dirección de movimiento
             {
                 Quaternion targetRotation = Quaternion.LookRotation(MoveDirection, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(
@@ -66,8 +103,14 @@ namespace Umbralis.Player
             else
                 verticalVelocity += gravity * Time.deltaTime;
 
-            Vector3 velocity = MoveDirection * moveSpeed + Vector3.up * verticalVelocity;
-            controller.Move(velocity * Time.deltaTime);
+            Vector3 horizontal = MoveDirection * moveSpeed;
+            if (IsDashing)
+            {
+                dashTimeLeft -= Time.deltaTime;
+                horizontal = dashVelocity;
+            }
+
+            controller.Move((horizontal + Vector3.up * verticalVelocity) * Time.deltaTime);
         }
 
         /// <summary>
