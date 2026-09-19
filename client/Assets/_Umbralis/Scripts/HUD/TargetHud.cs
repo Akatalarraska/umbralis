@@ -1,25 +1,18 @@
 using UnityEngine;
-using UnityEngine.UI;
 using Umbralis.Combat;
 
 namespace Umbralis.HUD
 {
     /// <summary>
     /// Panel del objetivo actual, arriba en el centro: nombre y vida. Se oculta
-    /// si no hay objetivo. El botón "Cambiar" pasa al siguiente enemigo.
+    /// si no hay objetivo. (El botón de cambiar objetivo está en la barra de
+    /// combate: <see cref="TouchControls.CycleTargetButton"/>.)
     /// </summary>
     public sealed class TargetHud : MonoBehaviour
     {
         [SerializeField] private TargetSelector selector;
         [SerializeField] private GameObject panel;
         [SerializeField] private HudBar healthBar;
-        [SerializeField] private Button cycleButton;
-
-        private void Awake()
-        {
-            if (cycleButton != null && selector != null)
-                cycleButton.onClick.AddListener(selector.CycleNext);
-        }
 
         private void Update()
         {

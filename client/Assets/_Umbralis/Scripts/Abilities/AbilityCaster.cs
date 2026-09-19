@@ -112,7 +112,7 @@ namespace Umbralis.Abilities
         /// <summary>Lanza con una dirección (horizontal) y un punto ya elegidos por el jugador.</summary>
         public bool TryCast(int slot, Vector3 direction, Vector3 point)
         {
-            if (!IsReady(slot) || !CanAfford(slot)) return false;
+            if (!isActiveAndEnabled || !IsReady(slot) || !CanAfford(slot)) return false; // muerto: Respawner nos apaga
             AbilityDefinition ability = slots[slot];
 
             direction.y = 0f;

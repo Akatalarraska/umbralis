@@ -9,6 +9,7 @@ using UnityEngine.UI;
 using Umbralis.Abilities;
 using Umbralis.Combat;
 using Umbralis.Core;
+using Umbralis.Enemies;
 using Umbralis.HUD;
 using Umbralis.Player;
 using Umbralis.TouchControls;
@@ -58,13 +59,14 @@ namespace Umbralis.EditorTools
             GameObject player = CreatePlayer(abilities);
             GameObject camera = CreateCamera();
             CreateDummies();
+            CreateEnemies();
             CreateWorldHealthBar(player.transform, player.GetComponent<Health>());
             CreateDamageNumbers();
             AimIndicator aimIndicator = CreateAimIndicator();
             CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
             CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), player.GetComponent<PlayerDodge>(), aimIndicator);
             CreateStatusHud(hudRoot, player.GetComponent<Health>(), player.GetComponent<ClassResource>());
-            CreateTargeting(hudRoot, player, lookZone);
+            CreateTargeting(hudRoot, player, hudRoot.GetComponentsInChildren<TapDetector>());
             CreateEventSystem();
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
 
@@ -236,7 +238,7 @@ namespace Umbralis.EditorTools
             SetFloat(rage, "max", 100f);
             SetFloat(rage, "startValue", 0f);
             SetFloat(rage, "gainPerHitDealt", 5f);
-            SetFloat(rage, "gainPerDamageTaken", 0.1f);
+            SetFloat(rage, "gainPerDamageTaken", 0.4f);
             SetFloat(rage, "combatTimeout", 5f);
             SetFloat(rage, "outOfCombatChangePerSecond", -8f);
 
@@ -261,6 +263,12 @@ namespace Umbralis.EditorTools
             marker.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
             Object.DestroyImmediate(marker.GetComponent<Collider>());
             marker.GetComponent<Renderer>().sharedMaterial = markerMat;
+
+            // Sin pantalla de muerte en el prototipo: reaparece en el origen a los 3 s.
+            Respawner respawner = root.AddComponent<Respawner>();
+            SetFloat(respawner, "delay", 3f);
+            SetArray(respawner, "renderers", new Object[] { body.GetComponent<Renderer>(), marker.GetComponent<Renderer>() });
+            SetArray(respawner, "behaviours", new Object[] { root.GetComponent<PlayerMovement>(), root.GetComponent<PlayerDodge>(), caster });
 
             return root;
         }
@@ -371,11 +379,87 @@ namespace Umbralis.EditorTools
                 Renderer bodyRenderer = body.GetComponent<Renderer>();
                 bodyRenderer.sharedMaterial = normal;
 
-                TrainingDummy dummy = root.AddComponent<TrainingDummy>();
-                SetReference(dummy, "body", bodyRenderer);
-                SetReference(dummy, "normalMaterial", normal);
-                SetReference(dummy, "hitMaterial", hit);
+                AddHitReactionAndRespawn(root, bodyRenderer, normal, hit, 2f, null);
+                root.AddComponent<TrainingDummy>();
 
+                CreateWorldHealthBar(root.transform, health);
+            }
+        }
+
+        /// <summary>Parpadeo + empujón al recibir daño y reaparición tras morir, para muñecos y enemigos.</summary>
+        private static void AddHitReactionAndRespawn(GameObject root, Renderer body, Material normal, Material hit, float respawnDelay, Behaviour brain)
+        {
+            HitReaction reaction = root.AddComponent<HitReaction>();
+            SetReference(reaction, "body", body);
+            SetReference(reaction, "normalMaterial", normal);
+            SetReference(reaction, "hitMaterial", hit);
+
+            Respawner respawner = root.AddComponent<Respawner>();
+            SetFloat(respawner, "delay", respawnDelay);
+            SetArray(respawner, "renderers", new Object[] { body });
+            SetArray(respawner, "behaviours", brain != null ? new Object[] { brain } : new Object[0]);
+        }
+
+        /// <summary>
+        /// Dos enemigos con IA: persiguen al jugador y atacan con aviso en el
+        /// suelo. Se distinguen de los muñecos por el color (violeta) y por
+        /// arrancar lejos, para que el jugador decida cuándo entrar.
+        /// </summary>
+        private static void CreateEnemies()
+        {
+            Material normal = CreateMaterial("Enemy", new Color(0.5f, 0.2f, 0.7f));
+            Material hit = CreateMaterial("EnemyHit", Color.white);
+            Material telegraphOutline = CreateMaterial("TelegraphOutline", new Color(0.6f, 0.05f, 0.05f));
+            Material telegraphFill = CreateMaterial("TelegraphFill", new Color(1f, 0.2f, 0.1f));
+
+            var parent = new GameObject("Enemies");
+            Vector3[] positions = { new Vector3(14f, 0f, 10f), new Vector3(-13f, 0f, 12f) };
+            for (int i = 0; i < positions.Length; i++)
+            {
+                var root = new GameObject($"Acechador {i + 1}");
+                root.transform.SetParent(parent.transform, false);
+                root.transform.position = positions[i];
+                root.transform.rotation = Quaternion.LookRotation(-positions[i].normalized, Vector3.up);
+
+                CharacterController controller = root.AddComponent<CharacterController>();
+                controller.height = 2f;
+                controller.radius = 0.5f;
+                controller.center = new Vector3(0f, 1f, 0f);
+
+                Health health = root.AddComponent<Health>();
+                SetEnum(health, "team", (int)Team.Enemy);
+                SetFloat(health, "maxHealth", 120f);
+
+                GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                body.name = "Body";
+                body.transform.SetParent(root.transform, false);
+                body.transform.localPosition = new Vector3(0f, 1f, 0f);
+                Object.DestroyImmediate(body.GetComponent<Collider>());
+                Renderer bodyRenderer = body.GetComponent<Renderer>();
+                bodyRenderer.sharedMaterial = normal;
+
+                // Aviso de ataque: contorno fijo y relleno que crece, sueltos en el
+                // mundo (hijos de un objeto propio) para no girar con el enemigo.
+                var telegraphGo = new GameObject("AttackTelegraph");
+                telegraphGo.transform.SetParent(root.transform, false);
+                GameObject outline = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                outline.name = "Outline";
+                outline.transform.SetParent(telegraphGo.transform, false);
+                Object.DestroyImmediate(outline.GetComponent<Collider>());
+                outline.GetComponent<Renderer>().sharedMaterial = telegraphOutline;
+                GameObject fill = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                fill.name = "Fill";
+                fill.transform.SetParent(telegraphGo.transform, false);
+                Object.DestroyImmediate(fill.GetComponent<Collider>());
+                fill.GetComponent<Renderer>().sharedMaterial = telegraphFill;
+                AttackTelegraph telegraph = telegraphGo.AddComponent<AttackTelegraph>();
+                SetReference(telegraph, "outline", outline.transform);
+                SetReference(telegraph, "fill", fill.transform);
+
+                EnemyBrain brain = root.AddComponent<EnemyBrain>();
+                SetReference(brain, "telegraph", telegraph);
+
+                AddHitReactionAndRespawn(root, bodyRenderer, normal, hit, 5f, brain);
                 CreateWorldHealthBar(root.transform, health);
             }
         }
@@ -466,16 +550,18 @@ namespace Umbralis.EditorTools
             // Sprite circular incluido en Unity; nos ahorra crear texturas.
             Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 
-            // Mitad izquierda: joystick flotante.
+            // Mitad izquierda: joystick flotante (y detector de toques para seleccionar objetivo).
             GameObject leftZone = CreateZone("JoystickZone", canvasGo.transform, new Vector2(0f, 0f), new Vector2(0.5f, 1f));
+            leftZone.AddComponent<TapDetector>();
             joystick = leftZone.AddComponent<FloatingJoystick>();
             Image background = CreateImage("JoystickBackground", leftZone.transform, knob, 260f, new Color(1f, 1f, 1f, 0.35f));
             Image handle = CreateImage("JoystickHandle", background.transform, knob, 110f, new Color(1f, 1f, 1f, 0.8f));
             SetReference(joystick, "background", background.rectTransform);
             SetReference(joystick, "handle", handle.rectTransform);
 
-            // Mitad derecha: giro de cámara.
+            // Mitad derecha: giro de cámara (y detector de toques).
             GameObject rightZone = CreateZone("LookZone", canvasGo.transform, new Vector2(0.5f, 0f), new Vector2(1f, 1f));
+            rightZone.AddComponent<TapDetector>();
             lookZone = rightZone.AddComponent<CameraLookZone>();
         }
 
@@ -533,6 +619,18 @@ namespace Umbralis.EditorTools
                 SetReference(button, "dodge", dodge);
                 SetReference(button, "background", background);
                 SetReference(button, "cooldownOverlay", overlay);
+                SetReference(button, "label", label);
+            }
+
+            // Cambiar de objetivo: pequeño, encima del básico y pegado al borde derecho.
+            {
+                GameObject go = CreateRoundButton("Objetivo", bar.transform, new Vector2(-90f, 400f), 110f,
+                    out Image background, out Image overlay, out Text label);
+                Object.DestroyImmediate(overlay.gameObject); // no tiene recarga
+
+                CycleTargetButton button = go.AddComponent<CycleTargetButton>();
+                SetReference(button, "selector", caster.GetComponent<TargetSelector>());
+                SetReference(button, "background", background);
                 SetReference(button, "label", label);
             }
 
@@ -681,12 +779,12 @@ namespace Umbralis.EditorTools
         /// Selección de objetivo: toque en la zona de cámara, anillo bajo el
         /// objetivo, panel arriba en el centro y botón "Cambiar".
         /// </summary>
-        private static void CreateTargeting(Transform hudRoot, GameObject player, CameraLookZone lookZone)
+        private static void CreateTargeting(Transform hudRoot, GameObject player, TapDetector[] detectors)
         {
             TargetSelector selector = player.GetComponent<TargetSelector>();
 
             TapToTarget tap = player.AddComponent<TapToTarget>();
-            SetReference(tap, "lookZone", lookZone);
+            SetArray(tap, "detectors", detectors);
             SetReference(tap, "selector", selector);
 
             // Anillo en el suelo.
@@ -718,13 +816,10 @@ namespace Umbralis.EditorTools
             panelRt.sizeDelta = Vector2.zero;
             HudBar bar = CreateHudBar("TargetHealth", panel.transform, new Vector2(-250f, -40f), new Vector2(500f, 44f), new Color(0.9f, 0.25f, 0.2f));
 
-            Button cycle = CreateTextButton("CycleTarget", root.transform, new Vector2(0.5f, 1f), new Vector2(360f, -40f), new Vector2(180f, 50f), "Cambiar");
-
             TargetHud hud = root.AddComponent<TargetHud>();
             SetReference(hud, "selector", selector);
             SetReference(hud, "panel", panel);
             SetReference(hud, "healthBar", bar);
-            SetReference(hud, "cycleButton", cycle);
             panel.SetActive(false);
         }
 

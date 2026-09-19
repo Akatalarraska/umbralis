@@ -26,7 +26,8 @@ prueba en el móvil antes de seguir.
 - [x] Apuntado híbrido: toque rápido al objetivo, mantener y arrastrar para apuntar
 - [x] Selección de objetivo: tocar al enemigo y botón de cambio
       *(falta la prioridad automática configurable: ahora siempre "más cercano")*
-- [ ] Enemigo básico con vida, IA simple y ataque telegrafiado con zona en el suelo
+- [x] Enemigo básico con vida, IA simple y ataque telegrafiado con zona en el suelo
+      *(falta el aviso sonoro; de momento solo visual)*
 - [ ] Rendimientos decrecientes en aturdimientos
 - [x] Números de daño flotantes y barras de vida sobre los personajes
 - [ ] Las 10 habilidades del Devastador con sus recargas

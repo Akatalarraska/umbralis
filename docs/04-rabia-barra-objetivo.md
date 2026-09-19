@@ -62,17 +62,33 @@ habrá que reutilizar instancias.
 
 ## 4. Selección de objetivo
 
-- **Tocar a un enemigo** en la mitad derecha (toque corto, sin arrastre; menos
-  de 0,3 s y 20 px) lo selecciona. Tocar el vacío no deselecciona.
-- Botón **"Cambiar"** arriba en el centro: pasa al siguiente enemigo por
-  cercanía (al más cercano si no había ninguno).
+- **Tocar a un enemigo** en cualquier parte de la pantalla (toque corto, sin
+  arrastre: menos de 0,3 s y 0,15 pulgadas, `TapDetector`) lo selecciona.
+  Tocar el vacío no deselecciona.
+- Botón redondo **"Objetivo"** en la barra, encima del básico: pasa al
+  siguiente enemigo por cercanía (al más cercano si no había ninguno). Se mueve
+  y escala como los demás.
 - Anillo naranja bajo el objetivo y panel arriba en el centro con su nombre y
   vida. Se pierde al morir o a más de 30 m.
 - El **toque rápido de una habilidad va al objetivo seleccionado** si está a
   tiro (alcance × 1,25); si no lo hay, al más cercano y lo selecciona.
 - Código: `Scripts/Combat/TargetSelector.cs`, `TargetMarker.cs`,
-  `Scripts/HUD/TargetHud.cs`, `Scripts/TouchControls/TapToTarget.cs`,
-  y `CameraLookZone.Tapped`.
+  `Scripts/HUD/TargetHud.cs`, `Scripts/TouchControls/TapDetector.cs`,
+  `TapToTarget.cs` y `CycleTargetButton.cs`.
+
+## 5. Enemigo básico con IA y ataque telegrafiado
+
+Dos "Acechadores" (violeta) lejos de los muñecos. `Scripts/Enemies/EnemyBrain.cs`:
+esperan (12 m de aggro) → persiguen a 3,5 m/s → a 2,2 m anuncian el golpe
+durante **1,5 s** con `AttackTelegraph` (contorno rojo oscuro + relleno que
+crece hasta el borde) → golpe de 15 en un círculo de 2 m fijado al empezar el
+aviso (se esquiva saliendo o con la Embestida) → 1,2 s de recuperación.
+120 de vida; reaparecen a los 5 s.
+
+Reparto de responsabilidades: `HitReaction` (parpadeo y empujón), `Respawner`
+(ocultar, esperar, revivir; también en el jugador, 3 s), `TrainingDummy` solo
+mueve el muñeco. La Rabia por daño recibido pasa a **0,4 por punto** (+6 por
+golpe de Acechador).
 - Pendiente del diseño: prioridad automática configurable (más cercano / menos
   vida / jugadores antes que NPC). Ahora es siempre "más cercano".
 
