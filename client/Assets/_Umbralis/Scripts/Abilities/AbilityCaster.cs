@@ -41,6 +41,18 @@ namespace Umbralis.Abilities
         /// <summary>True mientras se carga una habilidad canalizada (Golpe del Conquistador).</summary>
         public bool IsChanneling => channel != null;
 
+        /// <summary>Se dispara al cambiar las ranuras (cambio de especialización): los botones se redibujan.</summary>
+        public event Action SlotsChanged;
+
+        /// <summary>Sustituye las 8 ranuras y pone las recargas a cero.</summary>
+        public void SetSlots(AbilityDefinition[] newSlots)
+        {
+            slots = newSlots ?? new AbilityDefinition[TotalSlots];
+            cooldownEnds = new float[slots.Length];
+            InterruptChannel();
+            SlotsChanged?.Invoke();
+        }
+
         private Coroutine channel;
         private Action channelInterrupt;
         public Team Team => Health.Team;

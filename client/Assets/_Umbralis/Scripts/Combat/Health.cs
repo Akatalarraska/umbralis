@@ -48,6 +48,10 @@ namespace Umbralis.Combat
         {
             if (!IsAlive || amount <= 0f) return;
 
+            if (statusEffects == null) statusEffects = GetComponent<StatusEffects>();
+            if (statusEffects != null) amount = statusEffects.ModifyIncoming(amount, attacker, hitDirection);
+            if (amount <= 0f) return;
+
             Current = Mathf.Max(0f, Current - amount);
             hitDirection.y = 0f;
             Damaged?.Invoke(amount, hitDirection.sqrMagnitude > 0.0001f ? hitDirection.normalized : Vector3.zero);
@@ -80,9 +84,12 @@ namespace Umbralis.Combat
             if (statusEffects == null) statusEffects = GetComponent<StatusEffects>();
             float multiplier = statusEffects != null ? statusEffects.DamageMultiplier : 1f;
             float lifesteal = statusEffects != null ? statusEffects.Lifesteal : 0f;
+            float outgoing = amount * multiplier;
+            if (statusEffects != null) outgoing = statusEffects.ModifyOutgoing(outgoing, victim, source);
 
-            float dealt = Mathf.Min(amount * multiplier, victim.Current);
-            victim.TakeDamage(amount * multiplier, hitDirection, this, source);
+            float before = victim.Current;
+            victim.TakeDamage(outgoing, hitDirection, this, source);
+            float dealt = before - victim.Current;
             if (lifesteal > 0f) Heal(dealt * lifesteal);
             return dealt;
         }

@@ -15,6 +15,8 @@ namespace Umbralis.Abilities
         [Min(0.05f)] public float duration = 0.2f;
         [Tooltip("Anchura del pasillo que golpea (radio).")]
         [Min(0.1f)] public float hitRadius = 0.8f;
+        [Tooltip("Aturde a los golpeados estos segundos (0 = no). Carga con escudo.")]
+        [Min(0f)] public float stunDuration = 0f;
 
         public override void Execute(in AbilityContext context)
         {
@@ -36,6 +38,11 @@ namespace Umbralis.Abilities
                     if (to.sqrMagnitude > hitRadius * hitRadius) continue;
                     alreadyHit.Add(h);
                     context.Caster.Health.DealDamage(h, damage, context.Direction, displayName);
+                    if (stunDuration > 0f)
+                    {
+                        Combat.StatusEffects status = h.GetComponent<Combat.StatusEffects>();
+                        if (status != null) status.ApplyStun(stunDuration);
+                    }
                 }
             }
 

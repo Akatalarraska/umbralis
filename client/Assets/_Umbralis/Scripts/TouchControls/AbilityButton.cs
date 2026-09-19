@@ -56,6 +56,19 @@ namespace Umbralis.TouchControls
 
         private void Start()
         {
+            if (caster != null) caster.SlotsChanged += Refresh;
+            Refresh();
+        }
+
+        private void OnDestroy()
+        {
+            if (caster != null) caster.SlotsChanged -= Refresh;
+        }
+
+        /// <summary>Nombre y color según la habilidad que haya ahora en la ranura.</summary>
+        private void Refresh()
+        {
+            EndGesture();
             AbilityDefinition ability = Ability;
             if (ability != null)
             {

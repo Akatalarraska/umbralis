@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using Umbralis.Combat;
+using Umbralis.Enemies;
+using Umbralis.Passives;
 
 namespace Umbralis.Abilities
 {
@@ -29,6 +31,12 @@ namespace Umbralis.Abilities
         [Min(0f)] public float bleedDamagePerTick = 0f;
         [Min(0.1f)] public float bleedInterval = 1f;
         [Min(0f)] public float bleedDuration = 0f;
+
+        [Header("Tanque")]
+        [Tooltip("Amenaza extra que suma a cada objetivo golpeado (Tajo de barrido).")]
+        [Min(0f)] public float threat = 0f;
+        [Tooltip("Aplastar: consume las cargas de Muralla y hace este extra por cada una (0,2 = +20 %).")]
+        [Min(0f)] public float bonusPerBulwarkCharge = 0f;
 
         [Header("Control")]
         [Tooltip("Segundos de aturdimiento (antes de rendimientos decrecientes). 0 = no aturde.")]
@@ -60,12 +68,26 @@ namespace Umbralis.Abilities
             Vector3 feet = context.Caster.transform.position;
             Vector3 direction = context.Direction;
 
+            // Aplastar: se lleva las cargas de Muralla una vez por lanzamiento, no por objetivo.
+            float chargeBonus = 1f;
+            if (bonusPerBulwarkCharge > 0f)
+            {
+                BulwarkPassive bulwark = context.Caster.GetComponent<BulwarkPassive>();
+                if (bulwark != null) chargeBonus += bonusPerBulwarkCharge * bulwark.ConsumeCharges();
+            }
+
             // Cada objetivo alcanzado recibe además los efectos opcionales.
             DamageInSphere(feet, range, 0f, attacker, direction, coneDegrees, direction, victim =>
             {
-                float amount = damage;
+                float amount = damage * chargeBonus;
                 if (executeThreshold > 0f && victim.Fraction <= executeThreshold) amount *= executeMultiplier;
                 attacker.DealDamage(victim, amount, direction, displayName);
+
+                if (threat > 0f)
+                {
+                    EnemyBrain brain = victim.GetComponent<EnemyBrain>();
+                    if (brain != null) brain.AddThreat(attacker, threat);
+                }
 
                 StatusEffects status = victim.GetComponent<StatusEffects>();
                 if (status == null) return;

@@ -41,6 +41,14 @@ namespace Umbralis.Combat
 
         public void CancelKnockback() => knockbackTimeLeft = 0f;
 
+        /// <summary>Desplazamiento forzado (atraer, empujar) independiente del daño.</summary>
+        public void Push(Vector3 displacement, float duration)
+        {
+            if (duration <= 0f) return;
+            knockbackVelocity = displacement / duration;
+            knockbackTimeLeft = duration;
+        }
+
         private void OnDamaged(float amount, Vector3 direction)
         {
             float distance = knockbackPerTenDamage * amount / 10f;

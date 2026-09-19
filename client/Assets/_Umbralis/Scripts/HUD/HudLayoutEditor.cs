@@ -25,7 +25,27 @@ namespace Umbralis.HUD
         [Tooltip("Cuánto cambia la escala con cada pulsación de + o −.")]
         [SerializeField, Range(0.05f, 0.5f)] private float scaleStep = 0.1f;
 
-        private const string PrefsKey = "umbralis.hud.layout.v1";
+        private const string PrefsKeyBase = "umbralis.hud.layout.v1";
+        private static string profile = "default";
+        private static string PrefsKey => PrefsKeyBase + "." + profile;
+
+        /// <summary>
+        /// Cambia el perfil de disposición (uno por especialización): vuelve a
+        /// los valores por defecto y aplica lo guardado para ese perfil.
+        /// </summary>
+        public static void SetProfile(string name)
+        {
+            if (string.IsNullOrEmpty(name)) name = "default";
+            if (name == profile && instance != null && instance.savedLoaded) return;
+            profile = name;
+            if (instance == null) return;
+            instance.savedLoaded = false;
+            foreach (HudEditableElement element in elements)
+            {
+                element.ResetToDefault();
+                instance.ApplySaved(element);
+            }
+        }
 
         public static bool IsEditing { get; private set; }
 

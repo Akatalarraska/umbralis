@@ -10,6 +10,7 @@ using Umbralis.Abilities;
 using Umbralis.Combat;
 using Umbralis.Core;
 using Umbralis.Enemies;
+using Umbralis.Passives;
 using Umbralis.HUD;
 using Umbralis.Player;
 using Umbralis.TouchControls;
@@ -32,6 +33,9 @@ namespace Umbralis.EditorTools
         private const string MaterialsFolder = RootFolder + "/Materials";
         private const string DataFolder = RootFolder + "/Data";
         private const string DevastadorFolder = DataFolder + "/Devastador";
+        private const string BaluarteFolder = DataFolder + "/Baluarte";
+        private const string SpecsFolder = DataFolder + "/Especializaciones";
+        private const string PassivesFolder = DataFolder + "/Pasivas";
         private const string ScenePath = ScenesFolder + "/CombatPrototype.unity";
 
         // Resolución de referencia del HUD. Los tamaños de UI (radio del joystick,
@@ -52,15 +56,19 @@ namespace Umbralis.EditorTools
             EnsureFolder(MaterialsFolder);
             EnsureFolder(DataFolder);
             EnsureFolder(DevastadorFolder);
+            EnsureFolder(BaluarteFolder);
+            EnsureFolder(SpecsFolder);
+            EnsureFolder(PassivesFolder);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             CreateLight();
             CreateArena();
-            AbilityDefinition[] abilities = CreateAbilityAssets();
-            GameObject player = CreatePlayer(abilities);
+            SpecializationDefinition[] specs = CreateAbilityAssets();
+            GameObject player = CreatePlayer(specs);
             GameObject camera = CreateCamera();
             CreateDummies();
+            CreateAllyDummy();
             CreateEnemies();
             CreateWorldHealthBar(player.transform, player.GetComponent<Health>());
             CreateDamageNumbers();
@@ -215,7 +223,7 @@ namespace Umbralis.EditorTools
             }
         }
 
-        private static GameObject CreatePlayer(AbilityDefinition[] abilities)
+        private static GameObject CreatePlayer(SpecializationDefinition[] specs)
         {
             Material playerMat = CreateMaterial("Player", new Color(0.25f, 0.55f, 0.95f));
             Material markerMat = CreateMaterial("PlayerMarker", new Color(0.95f, 0.85f, 0.2f));
@@ -251,7 +259,11 @@ namespace Umbralis.EditorTools
             AddStatusEffects(root, 2.6f);
 
             AbilityCaster caster = root.AddComponent<AbilityCaster>();
-            SetArray(caster, "slots", abilities);
+            SetArray(caster, "slots", specs[0].BuildSlots()); // la activa; el conmutador la vuelve a aplicar al arrancar
+
+            SpecializationSwitcher switcher = root.AddComponent<SpecializationSwitcher>();
+            SetArray(switcher, "specializations", specs);
+            SetInt(switcher, "activeIndex", 0);
 
             // Cuerpo: cápsula sin collider (el CharacterController ya hace de collider).
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -288,7 +300,7 @@ namespace Umbralis.EditorTools
         /// las que van en la barra. Cada asset es una muestra de un tipo de habilidad
         /// (melé, proyectil, carga, zona) que luego reutilizarán todas las clases.
         /// </summary>
-        private static AbilityDefinition[] CreateAbilityAssets()
+        private static SpecializationDefinition[] CreateAbilityAssets()
         {
             var melee = LoadOrCreateAsset<MeleeAbility>("Melee");
             melee.displayName = "Golpe";
@@ -344,7 +356,7 @@ namespace Umbralis.EditorTools
                 EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
 
-            return CreateDevastadorKit(melee);
+            return new[] { CreateDevastadorKit(melee), CreateBaluarteKit(melee) };
         }
 
         /// <summary>
@@ -353,7 +365,7 @@ namespace Umbralis.EditorTools
         /// Conquistador. Las otras 4 y Furia quedan creadas para cambiarlas en
         /// el Inspector del AbilityCaster del jugador.
         /// </summary>
-        private static AbilityDefinition[] CreateDevastadorKit(AbilityDefinition basic)
+        private static SpecializationDefinition CreateDevastadorKit(AbilityDefinition basic)
         {
             Material fx = CreateMaterial("FxDevastador", new Color(1f, 0.85f, 0.6f));
             Material fxControl = CreateMaterial("FxControl", new Color(1f, 0.9f, 0.2f));
@@ -412,19 +424,127 @@ namespace Umbralis.EditorTools
 
             var all = new AbilityDefinition[] { tajoGiratorio, golpeDemoledor, ejecutar, desgarrar, rafaga, hendidura, conmocionador, patada, salto, grito, furia, golpeConquistador };
             foreach (AbilityDefinition a in all) EditorUtility.SetDirty(a);
-            AssetDatabase.SaveAssets();
 
-            // 0 = básico, 1..6 = habilidades, 7 = definitiva.
-            var slots = new AbilityDefinition[AbilityCaster.TotalSlots];
-            slots[AbilityCaster.BasicSlot] = basic;
-            slots[AbilityCaster.FirstAbilitySlot + 0] = tajoGiratorio;
-            slots[AbilityCaster.FirstAbilitySlot + 1] = golpeDemoledor;
-            slots[AbilityCaster.FirstAbilitySlot + 2] = desgarrar;
-            slots[AbilityCaster.FirstAbilitySlot + 3] = conmocionador;
-            slots[AbilityCaster.FirstAbilitySlot + 4] = patada;
-            slots[AbilityCaster.FirstAbilitySlot + 5] = salto;
-            slots[AbilityCaster.UltimateSlot] = golpeConquistador;
-            return slots;
+            var passive = LoadOrCreateAsset<BattleThirstPassiveDefinition>("Pasivas/SedDeBatalla");
+            passive.displayName = "Sed de batalla";
+            passive.description = "Por encima de 50 de Rabia, los ataques básicos hacen un 25 % más de daño.";
+            passive.resourceThreshold = 50f; passive.basicMultiplier = 1.25f;
+            EditorUtility.SetDirty(passive);
+
+            var spec = LoadOrCreateAsset<SpecializationDefinition>("Especializaciones/Devastador");
+            spec.displayName = "Devastador";
+            spec.description = "Daño cuerpo a cuerpo. Arma a dos manos o dos armas a una mano.";
+            spec.basicAttack = basic;
+            spec.abilities = new AbilityDefinition[] { tajoGiratorio, golpeDemoledor, ejecutar, desgarrar, rafaga, hendidura, conmocionador, patada, salto, grito };
+            spec.ultimates = new AbilityDefinition[] { furia, golpeConquistador };
+            spec.passive = passive;
+            spec.defaultAbilityIndices = new[] { 0, 1, 3, 6, 7, 8 }; // Tajo giratorio, Golpe demoledor, Desgarrar, Conmocionador, Patada, Salto
+            spec.defaultUltimateIndex = 1;
+            EditorUtility.SetDirty(spec);
+            AssetDatabase.SaveAssets();
+            return spec;
+        }
+
+        /// <summary>
+        /// Las 10 habilidades y 2 definitivas del Baluarte (tanque) en Data/Baluarte/,
+        /// con la pasiva Muralla. Comparte el ataque básico con el Devastador.
+        /// </summary>
+        private static SpecializationDefinition CreateBaluarteKit(AbilityDefinition basic)
+        {
+            Material fx = CreateMaterial("FxBaluarte", new Color(0.7f, 0.85f, 1f));
+            Material fxControl = CreateMaterial("FxControl", new Color(1f, 0.9f, 0.2f));
+            Material fxUltimate = CreateMaterial("FxUltimate", new Color(1f, 0.3f, 0.1f));
+
+            Color gen = new Color(0.85f, 0.92f, 1f);     // generan Rabia
+            Color spend = new Color(1f, 0.55f, 0.35f);   // gastan Rabia
+            Color control = new Color(1f, 0.9f, 0.3f);   // controles / provocaciones
+            Color ult = new Color(1f, 0.25f, 0.2f);
+
+            MeleeAbility Melee(string file, string name, Color color, float dmg, float cone, float rng, float cd, float cost, float gain)
+            {
+                var a = LoadOrCreateAsset<MeleeAbility>("Baluarte/" + file);
+                a.displayName = name; a.buttonColor = color;
+                a.damage = dmg; a.coneDegrees = cone; a.range = rng; a.cooldown = cd;
+                a.resourceCost = cost; a.resourceGain = gain; a.aimMode = AimMode.Direction;
+                a.hitCount = 1; a.executeThreshold = 0f; a.bleedDamagePerTick = 0f; a.bleedDuration = 0f;
+                a.stunDuration = 0f; a.interrupts = false; a.threat = 0f; a.bonusPerBulwarkCharge = 0f; a.fxMaterial = fx;
+                return a;
+            }
+            SelfBuffAbility Buff(string file, string name, Color color, float cd, float cost, float duration)
+            {
+                var a = LoadOrCreateAsset<SelfBuffAbility>("Baluarte/" + file);
+                a.displayName = name; a.buttonColor = color; a.damage = 0f; a.range = 1f; a.cooldown = cd;
+                a.resourceCost = cost; a.resourceGain = 0f; a.aimMode = AimMode.Direction; a.duration = duration;
+                a.radius = 0f; a.damageReduction = 0f; a.frontalDamageReduction = 0f; a.thorns = 0f; a.preventDeath = false;
+                a.fxMaterial = fx;
+                return a;
+            }
+
+            var golpeEscudo = Melee("GolpeDeEscudo", "Golpe de escudo", control, 15f, 60f, 2.5f, 8f, 0f, 5f);
+            golpeEscudo.interrupts = true; golpeEscudo.fxMaterial = fxControl;
+            var tajoBarrido = Melee("TajoDeBarrido", "Tajo de barrido", gen, 20f, 120f, 3f, 4f, 0f, 10f);
+            tajoBarrido.threat = 40f;
+            var aplastar = Melee("Aplastar", "Aplastar", spend, 45f, 60f, 2.5f, 8f, 25f, 0f);
+            aplastar.bonusPerBulwarkCharge = 0.2f;
+
+            var lanzarEscudo = LoadOrCreateAsset<ShieldThrowAbility>("Baluarte/LanzarEscudo");
+            lanzarEscudo.displayName = "Lanzar escudo"; lanzarEscudo.buttonColor = gen;
+            lanzarEscudo.damage = 20f; lanzarEscudo.range = 12f; lanzarEscudo.cooldown = 10f; lanzarEscudo.resourceCost = 0f; lanzarEscudo.resourceGain = 5f;
+            lanzarEscudo.maxTargets = 3; lanzarEscudo.bounceRange = 6f; lanzarEscudo.pullDistance = 2f; lanzarEscudo.threat = 30f;
+            lanzarEscudo.aimMode = AimMode.Direction; lanzarEscudo.fxMaterial = fx;
+
+            var represalia = Buff("Represalia", "Represalia", spend, 20f, 20f, 6f);
+            represalia.thorns = 0.5f;
+            var muroEscudo = Buff("MuroDeEscudo", "Muro de escudo", gen, 25f, 0f, 6f);
+            muroEscudo.frontalDamageReduction = 0.6f;
+
+            var cargaEscudo = LoadOrCreateAsset<DashAbility>("Baluarte/CargaConEscudo");
+            cargaEscudo.displayName = "Carga con escudo"; cargaEscudo.buttonColor = control;
+            cargaEscudo.damage = 15f; cargaEscudo.range = 8f; cargaEscudo.cooldown = 12f; cargaEscudo.resourceCost = 0f; cargaEscudo.resourceGain = 10f;
+            cargaEscudo.duration = 0.3f; cargaEscudo.hitRadius = 0.9f; cargaEscudo.stunDuration = 1.5f;
+            cargaEscudo.aimMode = AimMode.Direction; cargaEscudo.fxMaterial = fxControl;
+
+            var gritoDesafio = LoadOrCreateAsset<TauntAbility>("Baluarte/GritoDeDesafio");
+            gritoDesafio.displayName = "Grito de desafío"; gritoDesafio.buttonColor = control;
+            gritoDesafio.damage = 0f; gritoDesafio.range = 8f; gritoDesafio.cooldown = 20f; gritoDesafio.resourceCost = 0f; gritoDesafio.resourceGain = 15f;
+            gritoDesafio.duration = 4f; gritoDesafio.radius = 8f; gritoDesafio.threat = 60f; gritoDesafio.aimMode = AimMode.Direction; gritoDesafio.fxMaterial = fxControl;
+
+            var provocar = LoadOrCreateAsset<TauntAbility>("Baluarte/Provocar");
+            provocar.displayName = "Provocar"; provocar.buttonColor = control;
+            provocar.damage = 0f; provocar.range = 15f; provocar.cooldown = 10f; provocar.resourceCost = 0f; provocar.resourceGain = 10f;
+            provocar.duration = 4f; provocar.radius = 0f; provocar.threat = 50f; provocar.aimMode = AimMode.Direction; provocar.fxMaterial = fxControl;
+
+            var interceptar = LoadOrCreateAsset<InterceptAbility>("Baluarte/Interceptar");
+            interceptar.displayName = "Interceptar"; interceptar.buttonColor = gen;
+            interceptar.damage = 0f; interceptar.range = 15f; interceptar.cooldown = 20f; interceptar.resourceCost = 0f; interceptar.resourceGain = 5f;
+            interceptar.leapDuration = 0.4f; interceptar.duration = 6f; interceptar.share = 0.5f; interceptar.aimMode = AimMode.Direction; interceptar.fxMaterial = fx;
+
+            var ultimaPosicion = Buff("UltimaPosicion", "Última Posición", ult, 90f, 0f, 4f);
+            ultimaPosicion.preventDeath = true; ultimaPosicion.fxMaterial = fxUltimate;
+            var estandarte = Buff("EstandarteDeGuerra", "Estandarte de guerra", ult, 60f, 0f, 8f);
+            estandarte.radius = 8f; estandarte.damageReduction = 0.3f; estandarte.fxMaterial = fxUltimate;
+
+            var all = new AbilityDefinition[] { golpeEscudo, tajoBarrido, lanzarEscudo, aplastar, represalia, cargaEscudo, muroEscudo, gritoDesafio, provocar, interceptar, ultimaPosicion, estandarte };
+            foreach (AbilityDefinition a in all) EditorUtility.SetDirty(a);
+
+            var passive = LoadOrCreateAsset<BulwarkPassiveDefinition>("Pasivas/Muralla");
+            passive.displayName = "Muralla";
+            passive.description = "Recibe un 30 % menos de daño de frente. Cada golpe bloqueado así da una carga (hasta 5) que aumenta un 10 % el siguiente golpe; Aplastar las consume con un 20 % extra por carga.";
+            passive.frontalReduction = 0.3f; passive.maxCharges = 5; passive.bonusPerCharge = 0.1f;
+            EditorUtility.SetDirty(passive);
+
+            var spec = LoadOrCreateAsset<SpecializationDefinition>("Especializaciones/Baluarte");
+            spec.displayName = "Baluarte";
+            spec.description = "Tanque. Arma a una mano con escudo.";
+            spec.basicAttack = basic;
+            spec.abilities = new AbilityDefinition[] { golpeEscudo, tajoBarrido, lanzarEscudo, aplastar, represalia, cargaEscudo, muroEscudo, gritoDesafio, provocar, interceptar };
+            spec.ultimates = new AbilityDefinition[] { ultimaPosicion, estandarte };
+            spec.passive = passive;
+            spec.defaultAbilityIndices = new[] { 0, 1, 2, 3, 5, 8 }; // Golpe de escudo, Tajo de barrido, Lanzar escudo, Aplastar, Carga con escudo, Provocar
+            spec.defaultUltimateIndex = 0;
+            EditorUtility.SetDirty(spec);
+            AssetDatabase.SaveAssets();
+            return spec;
         }
 
         private static void CreateDummies()
@@ -563,6 +683,39 @@ namespace Umbralis.EditorTools
                 AddHitReactionAndRespawn(root, bodyRenderer, normal, hit, 5f, brain);
                 CreateWorldHealthBar(root.transform, health);
             }
+        }
+
+        /// <summary>Aliado de entrenamiento (equipo del jugador) al que los enemigos acaban atacando: para probar al tanque.</summary>
+        private static void CreateAllyDummy()
+        {
+            Material normal = CreateMaterial("Ally", new Color(0.3f, 0.8f, 0.5f));
+            Material hit = CreateMaterial("AllyHit", Color.white);
+
+            var root = new GameObject("Aliado");
+            root.transform.position = new Vector3(0f, 0f, 18f);
+            root.transform.rotation = Quaternion.LookRotation(Vector3.back, Vector3.up);
+
+            CharacterController controller = root.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.5f;
+            controller.center = new Vector3(0f, 1f, 0f);
+
+            Health health = root.AddComponent<Health>();
+            SetEnum(health, "team", (int)Team.Player);
+            SetFloat(health, "maxHealth", 300f);
+
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            body.transform.SetParent(root.transform, false);
+            body.transform.localPosition = new Vector3(0f, 1f, 0f);
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            Renderer bodyRenderer = body.GetComponent<Renderer>();
+            bodyRenderer.sharedMaterial = normal;
+
+            AddHitReactionAndRespawn(root, bodyRenderer, normal, hit, 6f, null);
+            AddStatusEffects(root, 2.7f);
+            root.AddComponent<AllyDummy>();
+            CreateWorldHealthBar(root.transform, health);
         }
 
         /// <summary>Barra de vida sobre la cabeza: dos cubos finos que miran a la cámara.</summary>
@@ -988,11 +1141,34 @@ namespace Umbralis.EditorTools
             HudBar healthBar = CreateHudBar("HealthBar", root.transform, new Vector2(0f, 0f), new Vector2(420f, 44f), new Color(0.2f, 0.9f, 0.3f));
             HudBar resourceBar = CreateHudBar("ResourceBar", root.transform, new Vector2(0f, -56f), new Vector2(420f, 36f), new Color(0.95f, 0.3f, 0.2f));
 
+            var passiveGo = new GameObject("PassiveLabel", typeof(RectTransform), typeof(Text));
+            passiveGo.transform.SetParent(root.transform, false);
+            var passiveRt = passiveGo.GetComponent<RectTransform>();
+            passiveRt.anchorMin = passiveRt.anchorMax = passiveRt.pivot = new Vector2(0f, 1f);
+            passiveRt.anchoredPosition = new Vector2(4f, -98f);
+            passiveRt.sizeDelta = new Vector2(420f, 28f);
+            var passiveText = passiveGo.GetComponent<Text>();
+            passiveText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            passiveText.fontSize = 22;
+            passiveText.alignment = TextAnchor.MiddleLeft;
+            passiveText.color = new Color(1f, 0.95f, 0.8f);
+            passiveText.raycastTarget = false;
+
             PlayerStatusHud hud = root.AddComponent<PlayerStatusHud>();
             SetReference(hud, "health", health);
             SetReference(hud, "resource", resource);
             SetReference(hud, "healthBar", healthBar);
             SetReference(hud, "resourceBar", resourceBar);
+            SetReference(hud, "passiveLabel", passiveText);
+
+            // Cambio de especialización: arriba a la derecha, a la izquierda del botón "HUD".
+            SpecializationSwitcher switcher = health.GetComponent<SpecializationSwitcher>();
+            Button specButton = CreateTextButton("Specialization", hudRoot, new Vector2(1f, 1f), new Vector2(-180f, -40f), new Vector2(240f, 60f), "Especialización");
+            SpecializationHud specHud = specButton.gameObject.AddComponent<SpecializationHud>();
+            SetReference(specHud, "switcher", switcher);
+            SetReference(specHud, "button", specButton);
+            SetReference(specHud, "label", specButton.GetComponentInChildren<Text>());
+            SetReference(specHud, "background", specButton.GetComponent<Image>());
         }
 
         private static HudBar CreateHudBar(string name, Transform parent, Vector2 position, Vector2 size, Color fillColor)

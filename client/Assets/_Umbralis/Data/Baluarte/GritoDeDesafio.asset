@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 572298621b03c014e9eda8e9b271c4ff, type: 3}
+  m_Name: GritoDeDesafio
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.TauntAbility
+  displayName: "Grito de desaf\xEDo"
+  buttonColor: {r: 1, g: 0.9, b: 0.3, a: 1}
+  damage: 0
+  cooldown: 20
+  range: 8
+  aimMode: 0
+  resourceCost: 0
+  resourceGain: 15
+  faceLockDuration: 0.25
+  fxMaterial: {fileID: 2100000, guid: ceaf54986e7a283408e9bc9a8b3b0936, type: 2}
+  duration: 4
+  radius: 8
+  threat: 60

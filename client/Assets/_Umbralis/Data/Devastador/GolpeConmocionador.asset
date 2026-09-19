@@ -30,5 +30,7 @@ MonoBehaviour:
   bleedDamagePerTick: 0
   bleedInterval: 1
   bleedDuration: 0
+  threat: 0
+  bonusPerBulwarkCharge: 0
   stunDuration: 4
   interrupts: 0

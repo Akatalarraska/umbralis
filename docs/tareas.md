@@ -43,8 +43,11 @@ prueba en el móvil antes de seguir.
 
 ## Fase 2 — Segunda especialización y roles
 
-- [ ] Baluarte (tanque) con su pasiva Muralla y sus 10 habilidades
-- [ ] Cambio de especialización gratis fuera de combate, con barra propia
+Empezada el 19-09-2026 con la Fase 1 en código pero sin cerrar en el móvil
+(ver `prueba-fase-1.md`).
+
+- [x] Baluarte (tanque) con su pasiva Muralla y sus 10 habilidades
+- [x] Cambio de especialización gratis fuera de combate, con barra propia
 - [ ] Templario/Juramentado, para tener la clase espejo y comprobar que los
       números son idénticos y solo cambia lo visual
 

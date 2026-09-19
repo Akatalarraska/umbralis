@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da85b84d19300745b5c851f3dac91eb, type: 3}
+  m_Name: Muralla
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Passives.BulwarkPassiveDefinition
+  displayName: Muralla
+  description: "Recibe un 30 % menos de da\xF1o de frente. Cada golpe bloqueado as\xED
+    da una carga (hasta 5) que aumenta un 10 % el siguiente golpe; Aplastar las consume
+    con un 20 % extra por carga."
+  frontalReduction: 0.3
+  maxCharges: 5
+  bonusPerCharge: 0.1

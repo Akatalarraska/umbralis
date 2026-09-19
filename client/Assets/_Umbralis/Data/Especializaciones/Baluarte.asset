@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cfb87ad294df234fac90c093e05f9d1, type: 3}
+  m_Name: Baluarte
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.SpecializationDefinition
+  displayName: Baluarte
+  description: Tanque. Arma a una mano con escudo.
+  basicAttack: {fileID: 11400000, guid: 068933b51ad2bec46bd5f77d2c51adef, type: 2}
+  abilities:
+  - {fileID: 11400000, guid: 3643c148f0c4c6f428d71112ffd05b54, type: 2}
+  - {fileID: 11400000, guid: b4192fcda019fe2409eb1834212d83cd, type: 2}
+  - {fileID: 11400000, guid: c66cc7682cb7d2249929c18bf69f1bcd, type: 2}
+  - {fileID: 11400000, guid: 9025e5c7aba1f7c42aa2f909ba71a7ad, type: 2}
+  - {fileID: 11400000, guid: 5d844efbdbedc1240b795b3bcd8054a6, type: 2}
+  - {fileID: 11400000, guid: 449d74ef02ee4e845945f2bd0886a414, type: 2}
+  - {fileID: 11400000, guid: 7cce019c7d5bea24ea6e3e5e03639d4a, type: 2}
+  - {fileID: 11400000, guid: ea612dca086066949a57a2ba4779634c, type: 2}
+  - {fileID: 11400000, guid: 6c4ead218fdf8c2449a4e675a0b77b1c, type: 2}
+  - {fileID: 11400000, guid: 4760e7bb89b27b4468ff5a833b00a63b, type: 2}
+  ultimates:
+  - {fileID: 11400000, guid: c4c07c038ef5c2147869b169b03f5c6e, type: 2}
+  - {fileID: 11400000, guid: 4367d80e5be1a434aa2a0f992e6d2cf0, type: 2}
+  passive: {fileID: 11400000, guid: 8777f561fda7d984fb2de055392b93f1, type: 2}
+  defaultAbilityIndices: 000000000100000002000000030000000500000008000000
+  defaultUltimateIndex: 0

@@ -24,3 +24,4 @@ MonoBehaviour:
   fxMaterial: {fileID: 2100000, guid: f6720173871ee504490967ca3c27fecf, type: 2}
   duration: 0.2
   hitRadius: 0.8
+  stunDuration: 0
