@@ -58,6 +58,8 @@ namespace Umbralis.EditorTools
             GameObject player = CreatePlayer(abilities);
             GameObject camera = CreateCamera();
             CreateDummies();
+            CreateWorldHealthBar(player.transform, player.GetComponent<Health>());
+            CreateDamageNumbers();
             AimIndicator aimIndicator = CreateAimIndicator();
             CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
             CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), player.GetComponent<PlayerDodge>(), aimIndicator);
@@ -338,8 +340,6 @@ namespace Umbralis.EditorTools
         {
             Material normal = CreateMaterial("Dummy", new Color(0.85f, 0.25f, 0.25f));
             Material hit = CreateMaterial("DummyHit", Color.white);
-            Material barBg = CreateMaterial("HealthBarBackground", new Color(0.1f, 0.1f, 0.1f));
-            Material barFill = CreateMaterial("HealthBarFill", new Color(0.2f, 0.9f, 0.3f));
 
             var parent = new GameObject("Dummies");
             Vector3[] positions = { new Vector3(0f, 0f, 6f), new Vector3(8f, 0f, -3f), new Vector3(-8f, 0f, -1f) };
@@ -372,17 +372,33 @@ namespace Umbralis.EditorTools
                 SetReference(dummy, "normalMaterial", normal);
                 SetReference(dummy, "hitMaterial", hit);
 
-                // Barra de vida: dos cubos finos sobre la cabeza.
-                var bar = new GameObject("HealthBar");
-                bar.transform.SetParent(root.transform, false);
-                bar.transform.localPosition = new Vector3(0f, 2.4f, 0f);
-                CreateFlatCube("Background", bar.transform, barBg, new Vector3(1.2f, 0.12f, 0.02f));
-                GameObject fill = CreateFlatCube("Fill", bar.transform, barFill, new Vector3(1.2f, 0.1f, 0.02f));
-                fill.transform.localPosition = new Vector3(0f, 0f, -0.01f);
-                HealthBar healthBar = bar.AddComponent<HealthBar>();
-                SetReference(healthBar, "health", health);
-                SetReference(healthBar, "fill", fill.transform);
+                CreateWorldHealthBar(root.transform, health);
             }
+        }
+
+        /// <summary>Barra de vida sobre la cabeza: dos cubos finos que miran a la cámara.</summary>
+        private static void CreateWorldHealthBar(Transform owner, Health health)
+        {
+            Material barBg = CreateMaterial("HealthBarBackground", new Color(0.1f, 0.1f, 0.1f));
+            Material barFill = CreateMaterial("HealthBarFill", new Color(0.2f, 0.9f, 0.3f));
+
+            var bar = new GameObject("HealthBar");
+            bar.transform.SetParent(owner, false);
+            bar.transform.localPosition = new Vector3(0f, 2.4f, 0f);
+            CreateFlatCube("Background", bar.transform, barBg, new Vector3(1.2f, 0.12f, 0.02f));
+            GameObject fill = CreateFlatCube("Fill", bar.transform, barFill, new Vector3(1.2f, 0.1f, 0.02f));
+            fill.transform.localPosition = new Vector3(0f, 0f, -0.01f);
+            HealthBar healthBar = bar.AddComponent<HealthBar>();
+            SetReference(healthBar, "health", health);
+            SetReference(healthBar, "fill", fill.transform);
+        }
+
+        /// <summary>Números de daño flotantes: un solo escuchador para toda la escena.</summary>
+        private static void CreateDamageNumbers()
+        {
+            var go = new GameObject("DamageNumbers");
+            DamageNumberSpawner spawner = go.AddComponent<DamageNumberSpawner>();
+            SetReference(spawner, "font", Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
         }
 
         private static AimIndicator CreateAimIndicator()
