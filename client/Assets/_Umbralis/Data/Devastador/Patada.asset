@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba0ccf13460b58e4f8be5a683cc30316, type: 3}
-  m_Name: Melee
+  m_Name: Patada
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.MeleeAbility
-  displayName: Golpe
-  buttonColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
-  damage: 20
-  cooldown: 0.5
+  displayName: Patada
+  buttonColor: {r: 1, g: 0.9, b: 0.3, a: 1}
+  damage: 8
+  cooldown: 10
   range: 2.5
   aimMode: 0
   resourceCost: 0
-  resourceGain: 10
+  resourceGain: 5
   faceLockDuration: 0.25
-  fxMaterial: {fileID: 2100000, guid: a846909b876e3a84f8b717fd550a1b95, type: 2}
-  coneDegrees: 100
+  fxMaterial: {fileID: 2100000, guid: ceaf54986e7a283408e9bc9a8b3b0936, type: 2}
+  coneDegrees: 60
   hitCount: 1
   hitInterval: 0.2
   executeThreshold: 0
@@ -31,4 +31,4 @@ MonoBehaviour:
   bleedInterval: 1
   bleedDuration: 0
   stunDuration: 0
-  interrupts: 0
+  interrupts: 1

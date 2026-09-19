@@ -36,8 +36,8 @@ namespace Umbralis.Combat
                 && (owner == null || !hit.transform.IsChildOf(owner.transform)))
             {
                 Health health = hit.collider.GetComponentInParent<Health>();
-                if (health != null && (owner == null || health.Team != owner.Team))
-                    health.TakeDamage(damage, direction, owner);
+                if (health != null && owner == null) health.TakeDamage(damage, direction);
+                else if (health != null && health.Team != owner.Team) owner.DealDamage(health, damage, direction);
 
                 Destroy(gameObject);
                 return;

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df8fca8fcf9eaba49a6b58d183f82d2a, type: 3}
+  m_Name: Salto
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.LeapAbility
+  displayName: Salto
+  buttonColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  damage: 30
+  cooldown: 12
+  range: 8
+  aimMode: 1
+  resourceCost: 0
+  resourceGain: 10
+  faceLockDuration: 0.25
+  fxMaterial: {fileID: 2100000, guid: 0fb0b2c7137af5c46ab10dce29f08e2c, type: 2}
+  duration: 0.45
+  height: 2.5
+  radius: 2.5

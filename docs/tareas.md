@@ -28,10 +28,11 @@ prueba en el móvil antes de seguir.
       *(falta la prioridad automática configurable: ahora siempre "más cercano")*
 - [x] Enemigo básico con vida, IA simple y ataque telegrafiado con zona en el suelo
       *(falta el aviso sonoro; de momento solo visual)*
-- [ ] Rendimientos decrecientes en aturdimientos
+- [x] Rendimientos decrecientes en aturdimientos
 - [x] Números de daño flotantes y barras de vida sobre los personajes
-- [ ] Las 10 habilidades del Devastador con sus recargas
-- [ ] Definitivas: Furia y Golpe del Conquistador (carga de 1 s, se puede fallar)
+- [x] Las 10 habilidades del Devastador con sus recargas
+- [x] Definitivas: Furia y Golpe del Conquistador (carga de 1 s, se puede fallar)
+      *(Furia sin velocidad de ataque hasta que haya animaciones)*
 - [ ] Muñeco de entrenamiento con medidor de daño por segundo y desglose
       *(hecho `TrainingDummy` con parpadeo, empujón y reaparición; falta el medidor)*
 

@@ -19,14 +19,19 @@ namespace Umbralis.Abilities
         public readonly Vector3 Origin;      // centro del lanzador (altura del pecho)
         public readonly Vector3 Direction;   // horizontal, normalizada
         public readonly Vector3 Point;       // punto apuntado en el suelo
+        public readonly Health Target;       // objetivo dirigido (puede ser null)
 
-        public AbilityContext(AbilityCaster caster, Vector3 origin, Vector3 direction, Vector3 point)
+        public AbilityContext(AbilityCaster caster, Vector3 origin, Vector3 direction, Vector3 point, Health target = null)
         {
             Caster = caster;
             Origin = origin;
             Direction = direction;
             Point = point;
+            Target = target;
         }
+
+        /// <summary>Efectos de estado del objetivo, o null si no tiene (los muñecos no).</summary>
+        public StatusEffects TargetStatus => Target != null ? Target.GetComponent<StatusEffects>() : null;
     }
 
     /// <summary>
@@ -63,7 +68,35 @@ namespace Umbralis.Abilities
         /// <summary>Radio que muestra el indicador en modo Point.</summary>
         public virtual float AimRadius => 1f;
 
+        /// <summary>Si devuelve false la habilidad no se lanza: sin coste ni recarga.</summary>
+        public virtual bool CanExecute(in AbilityContext context) => true;
+
         public abstract void Execute(in AbilityContext context);
+
+        /// <summary>
+        /// Aplica daño a los enemigos de un cono/esfera y además ejecuta
+        /// <paramref name="onHit"/> sobre cada uno (para sangrados, aturdimientos...).
+        /// </summary>
+        protected static int DamageInSphere(Vector3 center, float radius, float damage, Health attacker, Vector3 knockbackDirection,
+            float coneDegrees, Vector3 coneForward, System.Action<Health> onHit)
+        {
+            int hits = 0;
+            float halfCone = coneDegrees * 0.5f;
+            foreach (Health h in Health.All.ToArray())
+            {
+                if (h.Team == attacker.Team || !h.IsAlive) continue;
+                Vector3 to = h.transform.position - center;
+                to.y = 0f;
+                if (to.sqrMagnitude > radius * radius) continue;
+                if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
+
+                Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
+                attacker.DealDamage(h, damage, push);
+                onHit?.Invoke(h);
+                hits++;
+            }
+            return hits;
+        }
 
         // ------------------------------------------------------------------
         // Utilidades comunes
@@ -98,7 +131,7 @@ namespace Umbralis.Abilities
                 if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
 
                 Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
-                h.TakeDamage(damage, push, attacker);
+                attacker.DealDamage(h, damage, push);
                 hits++;
             }
             return hits;

@@ -35,7 +35,7 @@ namespace Umbralis.Abilities
                     to.y = 0f;
                     if (to.sqrMagnitude > hitRadius * hitRadius) continue;
                     alreadyHit.Add(h);
-                    h.TakeDamage(damage, context.Direction, context.Caster.Health);
+                    context.Caster.Health.DealDamage(h, damage, context.Direction);
                 }
             }
 

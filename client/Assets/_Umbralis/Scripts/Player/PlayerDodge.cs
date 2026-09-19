@@ -22,7 +22,8 @@ namespace Umbralis.Player
         [SerializeField, Min(0f)] private float cooldown = 3f;
 
         public float Cooldown => cooldown;
-        public bool IsReady => isActiveAndEnabled && Time.time >= cooldownEnd && !movement.IsDashing;
+        public bool IsReady => isActiveAndEnabled && Time.time >= cooldownEnd && !movement.IsDashing && !movement.IsLeaping
+            && !movement.IsStunned && !movement.Rooted;
 
         /// <summary>0 = lista; 1 = acaba de usarse. Para el relleno del botón.</summary>
         public float CooldownFraction

@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 using Umbralis.Combat;
 using Umbralis.Player;
@@ -33,6 +35,14 @@ namespace Umbralis.Abilities
         public ClassResource Resource { get; private set; }
         /// <summary>Selección de objetivo; null si el personaje no la tiene.</summary>
         public TargetSelector Targeting { get; private set; }
+        /// <summary>Efectos de estado; null si el personaje no los tiene.</summary>
+        public StatusEffects Status { get; private set; }
+
+        /// <summary>True mientras se carga una habilidad canalizada (Golpe del Conquistador).</summary>
+        public bool IsChanneling => channel != null;
+
+        private Coroutine channel;
+        private Action channelInterrupt;
         public Team Team => Health.Team;
         public int SlotCount => slots.Length;
         public Vector3 Origin => transform.position + Vector3.up * originHeight;
@@ -45,7 +55,52 @@ namespace Umbralis.Abilities
             Health = GetComponent<Health>();
             Resource = GetComponent<ClassResource>();
             Targeting = GetComponent<TargetSelector>();
+            Status = GetComponent<StatusEffects>();
             cooldownEnds = new float[slots.Length];
+        }
+
+        private void OnEnable()
+        {
+            if (Status != null) Status.Interrupted += InterruptChannel;
+        }
+
+        private void OnDisable()
+        {
+            if (Status != null) Status.Interrupted -= InterruptChannel;
+            InterruptChannel();
+        }
+
+        /// <summary>
+        /// Canaliza durante <paramref name="duration"/> segundos con el personaje
+        /// anclado. Al terminar llama a <paramref name="onComplete"/>; si lo
+        /// aturden o interrumpen antes, a <paramref name="onInterrupt"/>.
+        /// </summary>
+        public void StartChannel(float duration, Action onComplete, Action onInterrupt)
+        {
+            InterruptChannel();
+            channelInterrupt = onInterrupt;
+            channel = StartCoroutine(Channel(duration, onComplete));
+        }
+
+        private IEnumerator Channel(float duration, Action onComplete)
+        {
+            Movement.Rooted = true;
+            yield return new WaitForSeconds(duration);
+            Movement.Rooted = false;
+            channel = null;
+            channelInterrupt = null;
+            onComplete?.Invoke();
+        }
+
+        private void InterruptChannel()
+        {
+            if (channel == null) return;
+            StopCoroutine(channel);
+            channel = null;
+            Movement.Rooted = false;
+            Action interrupt = channelInterrupt;
+            channelInterrupt = null;
+            interrupt?.Invoke();
         }
 
         public AbilityDefinition GetAbility(int slot)
@@ -106,18 +161,27 @@ namespace Umbralis.Abilities
                 point = transform.position + Vector3.ClampMagnitude(to, ability.range);
             }
 
-            return TryCast(slot, direction, point);
+            return TryCast(slot, direction, point, target);
         }
 
         /// <summary>Lanza con una dirección (horizontal) y un punto ya elegidos por el jugador.</summary>
-        public bool TryCast(int slot, Vector3 direction, Vector3 point)
+        public bool TryCast(int slot, Vector3 direction, Vector3 point, Health target = null)
         {
             if (!isActiveAndEnabled || !IsReady(slot) || !CanAfford(slot)) return false; // muerto: Respawner nos apaga
+            if (IsChanneling || (Status != null && Status.IsStunned) || Movement.IsLeaping) return false;
             AbilityDefinition ability = slots[slot];
 
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) direction = transform.forward;
             direction.Normalize();
+
+            // Si el jugador apuntó a mano y no hay objetivo, las dirigidas usan el seleccionado si está a tiro.
+            if (target == null && Targeting != null && Targeting.HasTarget
+                && (Targeting.Current.transform.position - transform.position).sqrMagnitude <= ability.range * ability.range * 1.5625f)
+                target = Targeting.Current;
+
+            var context = new AbilityContext(this, Origin, direction, point, target);
+            if (!ability.CanExecute(in context)) return false; // p. ej. definitiva sin objetivo: ni recarga ni coste
 
             if (Resource != null)
             {
@@ -127,7 +191,7 @@ namespace Umbralis.Abilities
             cooldownEnds[slot] = Time.time + ability.cooldown;
             Movement.LockFacing(direction, ability.faceLockDuration);
 
-            ability.Execute(new AbilityContext(this, Origin, direction, point));
+            ability.Execute(in context);
             return true;
         }
     }

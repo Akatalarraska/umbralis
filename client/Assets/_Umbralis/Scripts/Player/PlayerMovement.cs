@@ -1,4 +1,5 @@
 using UnityEngine;
+using Umbralis.Combat;
 using Umbralis.TouchControls;
 
 namespace Umbralis.Player
@@ -51,6 +52,37 @@ namespace Umbralis.Player
         /// <summary>True mientras dura una embestida.</summary>
         public bool IsDashing => dashTimeLeft > 0f;
 
+        /// <summary>True mientras dura un salto (Salto del Devastador).</summary>
+        public bool IsLeaping => leapTimeLeft > 0f;
+
+        /// <summary>
+        /// Anclado: no puede moverse por el joystick (cargando una definitiva,
+        /// por ejemplo). Lo activa y desactiva quien lo necesite.
+        /// </summary>
+        public bool Rooted { get; set; }
+
+        /// <summary>True si no puede actuar: aturdido.</summary>
+        public bool IsStunned => status != null && status.IsStunned;
+
+        // Salto parabólico hacia un punto: ignora la gravedad mientras dura.
+        private Vector3 leapStart, leapEnd;
+        private float leapDuration, leapTimeLeft, leapHeight;
+        private StatusEffects status;
+
+        /// <summary>Salta en arco hasta <paramref name="destination"/> en <paramref name="duration"/> segundos.</summary>
+        public void Leap(Vector3 destination, float duration, float height = 2f)
+        {
+            if (duration <= 0f) return;
+            leapStart = transform.position;
+            leapEnd = destination;
+            leapDuration = duration;
+            leapTimeLeft = duration;
+            leapHeight = height;
+            Vector3 dir = leapEnd - leapStart;
+            dir.y = 0f;
+            LockFacing(dir, duration);
+        }
+
         /// <summary>Desplaza al personaje <paramref name="distance"/> metros en <paramref name="duration"/> segundos.</summary>
         public void Dash(Vector3 direction, float distance, float duration)
         {
@@ -75,13 +107,21 @@ namespace Umbralis.Player
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+            status = GetComponent<StatusEffects>();
             if (cameraTransform == null && Camera.main != null)
                 cameraTransform = Camera.main.transform;
         }
 
         private void Update()
         {
+            if (IsLeaping)
+            {
+                UpdateLeap();
+                return;
+            }
+
             Vector2 input = joystick != null ? joystick.Direction : Vector2.zero;
+            if (Rooted || IsStunned) input = Vector2.zero; // el joystick no manda
             MoveDirection = InputToWorld(input);
 
             if (facingLockTimeLeft > 0f)
@@ -103,7 +143,8 @@ namespace Umbralis.Player
             else
                 verticalVelocity += gravity * Time.deltaTime;
 
-            Vector3 horizontal = MoveDirection * moveSpeed;
+            float speedMultiplier = status != null ? status.SpeedMultiplier : 1f;
+            Vector3 horizontal = MoveDirection * (moveSpeed * speedMultiplier);
             if (IsDashing)
             {
                 dashTimeLeft -= Time.deltaTime;
@@ -111,6 +152,16 @@ namespace Umbralis.Player
             }
 
             controller.Move((horizontal + Vector3.up * verticalVelocity) * Time.deltaTime);
+        }
+
+        private void UpdateLeap()
+        {
+            leapTimeLeft -= Time.deltaTime;
+            float t = 1f - Mathf.Clamp01(leapTimeLeft / leapDuration);
+            Vector3 wanted = Vector3.Lerp(leapStart, leapEnd, t);
+            wanted.y += Mathf.Sin(t * Mathf.PI) * leapHeight; // arco
+            controller.Move(wanted - transform.position);
+            if (leapTimeLeft <= 0f) verticalVelocity = -2f;
         }
 
         /// <summary>

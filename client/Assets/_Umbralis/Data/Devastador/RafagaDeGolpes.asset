@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba0ccf13460b58e4f8be5a683cc30316, type: 3}
-  m_Name: Melee
+  m_Name: RafagaDeGolpes
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.MeleeAbility
-  displayName: Golpe
-  buttonColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
-  damage: 20
-  cooldown: 0.5
+  displayName: "R\xE1faga de golpes"
+  buttonColor: {r: 1, g: 0.55, b: 0.35, a: 1}
+  damage: 15
+  cooldown: 8
   range: 2.5
   aimMode: 0
-  resourceCost: 0
-  resourceGain: 10
+  resourceCost: 15
+  resourceGain: 0
   faceLockDuration: 0.25
-  fxMaterial: {fileID: 2100000, guid: a846909b876e3a84f8b717fd550a1b95, type: 2}
-  coneDegrees: 100
-  hitCount: 1
+  fxMaterial: {fileID: 2100000, guid: 0fb0b2c7137af5c46ab10dce29f08e2c, type: 2}
+  coneDegrees: 60
+  hitCount: 3
   hitInterval: 0.2
   executeThreshold: 0
   executeMultiplier: 3

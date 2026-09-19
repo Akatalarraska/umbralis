@@ -12,9 +12,13 @@ namespace Umbralis.Enemies
     /// saliendo de ella (o con la Embestida).
     /// </summary>
     [RequireComponent(typeof(Health), typeof(CharacterController), typeof(HitReaction))]
+    [RequireComponent(typeof(StatusEffects))]
     public sealed class EnemyBrain : MonoBehaviour
     {
         private enum State { Idle, Chase, Telegraph, Recover }
+
+        /// <summary>True mientras anuncia un golpe: es cuando se le puede interrumpir.</summary>
+        public bool IsTelegraphing => state == State.Telegraph;
 
         [Header("Referencias")]
         [SerializeField] private AttackTelegraph telegraph;
@@ -41,6 +45,7 @@ namespace Umbralis.Enemies
         private Health health;
         private CharacterController controller;
         private HitReaction hitReaction;
+        private StatusEffects status;
         private State state = State.Idle;
         private Health target;
         private float stateTimer;
@@ -51,13 +56,26 @@ namespace Umbralis.Enemies
             health = GetComponent<Health>();
             controller = GetComponent<CharacterController>();
             hitReaction = GetComponent<HitReaction>();
+            status = GetComponent<StatusEffects>();
         }
+
+        private void OnEnable() => status.Interrupted += OnInterrupted;
 
         private void OnDisable()
         {
+            status.Interrupted -= OnInterrupted;
             // Al morir (Respawner nos apaga) el aviso no debe quedarse en el suelo.
             if (telegraph != null) telegraph.Hide();
             state = State.Idle;
+        }
+
+        /// <summary>Patada del jugador o aturdimiento: el golpe anunciado se cancela y pierde el turno.</summary>
+        private void OnInterrupted()
+        {
+            if (state != State.Telegraph) return;
+            if (telegraph != null) telegraph.Hide();
+            stateTimer = recoverDuration;
+            state = State.Recover;
         }
 
         private void Update()
@@ -65,6 +83,13 @@ namespace Umbralis.Enemies
             if (!controller.enabled || !health.IsAlive) return;
 
             Vector3 move = hitReaction.ConsumeKnockback(Time.deltaTime);
+
+            // Aturdido: ni se mueve ni piensa; solo encaja empujones y gravedad.
+            if (status.IsStunned)
+            {
+                controller.Move(move + Vector3.down * (5f * Time.deltaTime));
+                return;
+            }
 
             switch (state)
             {
@@ -80,7 +105,7 @@ namespace Umbralis.Enemies
                     if (to.magnitude <= attackRange)
                         StartTelegraph(to);
                     else if (!hitReaction.IsKnockedBack)
-                        move += to.normalized * (moveSpeed * Time.deltaTime);
+                        move += to.normalized * (moveSpeed * status.SpeedMultiplier * Time.deltaTime);
                     break;
 
                 case State.Telegraph:
@@ -138,7 +163,7 @@ namespace Umbralis.Enemies
                 Vector3 to = h.transform.position - hitCenter;
                 to.y = 0f;
                 if (to.sqrMagnitude > hitRadius * hitRadius) continue;
-                h.TakeDamage(damage, transform.forward, health);
+                health.DealDamage(h, damage, transform.forward);
             }
 
             stateTimer = recoverDuration;

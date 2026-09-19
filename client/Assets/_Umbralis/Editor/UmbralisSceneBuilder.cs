@@ -31,6 +31,7 @@ namespace Umbralis.EditorTools
         private const string ScenesFolder = RootFolder + "/Scenes";
         private const string MaterialsFolder = RootFolder + "/Materials";
         private const string DataFolder = RootFolder + "/Data";
+        private const string DevastadorFolder = DataFolder + "/Devastador";
         private const string ScenePath = ScenesFolder + "/CombatPrototype.unity";
 
         // Resolución de referencia del HUD. Los tamaños de UI (radio del joystick,
@@ -50,6 +51,7 @@ namespace Umbralis.EditorTools
             EnsureFolder(ScenesFolder);
             EnsureFolder(MaterialsFolder);
             EnsureFolder(DataFolder);
+            EnsureFolder(DevastadorFolder);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -243,6 +245,7 @@ namespace Umbralis.EditorTools
             SetFloat(rage, "outOfCombatChangePerSecond", -8f);
 
             root.AddComponent<TargetSelector>();
+            AddStatusEffects(root, 2.6f);
 
             AbilityCaster caster = root.AddComponent<AbilityCaster>();
             SetArray(caster, "slots", abilities);
@@ -338,12 +341,86 @@ namespace Umbralis.EditorTools
                 EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
 
-            // 0 = básico, 1..6 = habilidades, 7 = definitiva. Las vacías se ven apagadas.
+            return CreateDevastadorKit(melee);
+        }
+
+        /// <summary>
+        /// Las 10 habilidades y 2 definitivas del Devastador como assets en
+        /// Data/Devastador/, y la barra inicial: básico + 6 elegidas + Golpe del
+        /// Conquistador. Las otras 4 y Furia quedan creadas para cambiarlas en
+        /// el Inspector del AbilityCaster del jugador.
+        /// </summary>
+        private static AbilityDefinition[] CreateDevastadorKit(AbilityDefinition basic)
+        {
+            Material fx = CreateMaterial("FxDevastador", new Color(1f, 0.85f, 0.6f));
+            Material fxControl = CreateMaterial("FxControl", new Color(1f, 0.9f, 0.2f));
+            Material fxUltimate = CreateMaterial("FxUltimate", new Color(1f, 0.3f, 0.1f));
+
+            MeleeAbility Melee(string file, string name, Color color, float dmg, float cone, float rng, float cd, float cost, float gain)
+            {
+                var a = LoadOrCreateAsset<MeleeAbility>("Devastador/" + file);
+                a.displayName = name; a.buttonColor = color;
+                a.damage = dmg; a.coneDegrees = cone; a.range = rng; a.cooldown = cd;
+                a.resourceCost = cost; a.resourceGain = gain; a.aimMode = AimMode.Direction;
+                a.hitCount = 1; a.executeThreshold = 0f; a.bleedDamagePerTick = 0f; a.bleedDuration = 0f;
+                a.stunDuration = 0f; a.interrupts = false; a.fxMaterial = fx;
+                return a;
+            }
+
+            Color gen = new Color(0.95f, 0.95f, 0.95f);   // generan Rabia
+            Color spend = new Color(1f, 0.55f, 0.35f);    // gastan Rabia
+            Color control = new Color(1f, 0.9f, 0.3f);    // controles
+
+            var tajoGiratorio = Melee("TajoGiratorio", "Tajo giratorio", gen, 25f, 360f, 3f, 6f, 0f, 10f);
+            var golpeDemoledor = Melee("GolpeDemoledor", "Golpe demoledor", spend, 70f, 60f, 2.5f, 8f, 30f, 0f);
+            var ejecutar = Melee("Ejecutar", "Ejecutar", spend, 30f, 60f, 2.5f, 10f, 20f, 0f);
+            ejecutar.executeThreshold = 0.3f; ejecutar.executeMultiplier = 3f;
+            var desgarrar = Melee("Desgarrar", "Desgarrar", gen, 12f, 90f, 2.5f, 6f, 0f, 5f);
+            desgarrar.bleedDamagePerTick = 8f; desgarrar.bleedInterval = 1f; desgarrar.bleedDuration = 6f;
+            var rafaga = Melee("RafagaDeGolpes", "Ráfaga de golpes", spend, 15f, 60f, 2.5f, 8f, 15f, 0f);
+            rafaga.hitCount = 3; rafaga.hitInterval = 0.2f;
+            var hendidura = Melee("Hendidura", "Hendidura", gen, 35f, 90f, 3.5f, 5f, 0f, 5f);
+            var conmocionador = Melee("GolpeConmocionador", "Golpe conmocionador", control, 15f, 60f, 2.5f, 15f, 25f, 0f);
+            conmocionador.stunDuration = 4f; conmocionador.fxMaterial = fxControl;
+            var patada = Melee("Patada", "Patada", control, 8f, 60f, 2.5f, 10f, 0f, 5f);
+            patada.interrupts = true; patada.fxMaterial = fxControl;
+
+            var salto = LoadOrCreateAsset<LeapAbility>("Devastador/Salto");
+            salto.displayName = "Salto"; salto.buttonColor = gen;
+            salto.damage = 30f; salto.range = 8f; salto.cooldown = 12f; salto.resourceCost = 0f; salto.resourceGain = 10f;
+            salto.duration = 0.45f; salto.height = 2.5f; salto.radius = 2.5f; salto.aimMode = AimMode.Point; salto.fxMaterial = fx;
+
+            var grito = LoadOrCreateAsset<WarCryAbility>("Devastador/GritoDeGuerra");
+            grito.displayName = "Grito de guerra"; grito.buttonColor = control;
+            grito.damage = 0f; grito.range = 6f; grito.cooldown = 20f; grito.resourceCost = 0f; grito.resourceGain = 25f;
+            grito.slowFraction = 0.4f; grito.slowDuration = 4f; grito.aimMode = AimMode.Direction; grito.fxMaterial = fxControl;
+
+            var furia = LoadOrCreateAsset<FuryAbility>("Devastador/Furia");
+            furia.displayName = "Furia"; furia.buttonColor = new Color(1f, 0.25f, 0.2f);
+            furia.damage = 0f; furia.range = 1f; furia.cooldown = 60f; furia.resourceCost = 0f; furia.resourceGain = 0f;
+            furia.duration = 8f; furia.damageMultiplier = 1.3f; furia.lifesteal = 0.25f; furia.fxMaterial = fxUltimate;
+
+            var golpeConquistador = LoadOrCreateAsset<ConquerorStrikeAbility>("Devastador/GolpeDelConquistador");
+            golpeConquistador.displayName = "Golpe del Conquistador"; golpeConquistador.buttonColor = new Color(1f, 0.25f, 0.2f);
+            golpeConquistador.damage = 80f; golpeConquistador.range = 3f; golpeConquistador.cooldown = 45f;
+            golpeConquistador.resourceCost = 0f; golpeConquistador.resourceGain = 0f; golpeConquistador.faceLockDuration = 1f;
+            golpeConquistador.chargeDuration = 1f; golpeConquistador.minimumResource = 30f; golpeConquistador.damagePerResource = 2f;
+            golpeConquistador.aimMode = AimMode.Direction; golpeConquistador.fxMaterial = fxUltimate;
+
+            var all = new AbilityDefinition[] { tajoGiratorio, golpeDemoledor, ejecutar, desgarrar, rafaga, hendidura, conmocionador, patada, salto, grito, furia, golpeConquistador };
+            foreach (AbilityDefinition a in all) EditorUtility.SetDirty(a);
+            AssetDatabase.SaveAssets();
+
+            // 0 = básico, 1..6 = habilidades, 7 = definitiva.
             var slots = new AbilityDefinition[AbilityCaster.TotalSlots];
-            slots[AbilityCaster.BasicSlot] = melee;
-            slots[AbilityCaster.FirstAbilitySlot + 0] = projectile;
-            slots[AbilityCaster.FirstAbilitySlot + 1] = blast;
-            slots[AbilityCaster.FirstAbilitySlot + 2] = dash;
+            slots[AbilityCaster.BasicSlot] = basic;
+            slots[AbilityCaster.FirstAbilitySlot + 0] = tajoGiratorio;
+            slots[AbilityCaster.FirstAbilitySlot + 1] = golpeDemoledor;
+            slots[AbilityCaster.FirstAbilitySlot + 2] = desgarrar;
+            slots[AbilityCaster.FirstAbilitySlot + 3] = conmocionador;
+            slots[AbilityCaster.FirstAbilitySlot + 4] = patada;
+            slots[AbilityCaster.FirstAbilitySlot + 5] = salto;
+            slots[AbilityCaster.UltimateSlot] = golpeConquistador;
             return slots;
         }
 
@@ -380,10 +457,30 @@ namespace Umbralis.EditorTools
                 bodyRenderer.sharedMaterial = normal;
 
                 AddHitReactionAndRespawn(root, bodyRenderer, normal, hit, 2f, null);
+                AddStatusEffects(root, 2.7f);
                 root.AddComponent<TrainingDummy>();
 
                 CreateWorldHealthBar(root.transform, health);
             }
+        }
+
+        /// <summary>Efectos de estado y sus marcadores sobre la cabeza (aturdido amarillo, ralentizado azul).</summary>
+        private static void AddStatusEffects(GameObject root, float markerHeight)
+        {
+            root.AddComponent<StatusEffects>();
+            Material stunMat = CreateMaterial("StatusStun", new Color(1f, 0.9f, 0.2f));
+            Material slowMat = CreateMaterial("StatusSlow", new Color(0.3f, 0.6f, 1f));
+
+            GameObject stun = CreateFlatCube("StunMarker", root.transform, stunMat, new Vector3(0.35f, 0.35f, 0.35f));
+            stun.transform.localPosition = new Vector3(0f, markerHeight, 0f);
+            stun.SetActive(false);
+            GameObject slow = CreateFlatCube("SlowMarker", root.transform, slowMat, new Vector3(0.25f, 0.25f, 0.25f));
+            slow.transform.localPosition = new Vector3(0.45f, markerHeight, 0f);
+            slow.SetActive(false);
+
+            StatusIndicator indicator = root.AddComponent<StatusIndicator>();
+            SetReference(indicator, "stunMarker", stun.transform);
+            SetReference(indicator, "slowMarker", slow.transform);
         }
 
         /// <summary>Parpadeo + empujón al recibir daño y reaparición tras morir, para muñecos y enemigos.</summary>
@@ -456,6 +553,7 @@ namespace Umbralis.EditorTools
                 SetReference(telegraph, "outline", outline.transform);
                 SetReference(telegraph, "fill", fill.transform);
 
+                AddStatusEffects(root, 2.7f);
                 EnemyBrain brain = root.AddComponent<EnemyBrain>();
                 SetReference(brain, "telegraph", telegraph);
 
@@ -760,6 +858,9 @@ namespace Umbralis.EditorTools
             label = labelGo.GetComponent<Text>();
             label.font = font;
             label.fontSize = 28;
+            label.resizeTextForBestFit = true; // nombres largos ("Golpe conmocionador") se encogen
+            label.resizeTextMinSize = 12;
+            label.resizeTextMaxSize = 28;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(0.1f, 0.1f, 0.1f);
             label.raycastTarget = false;

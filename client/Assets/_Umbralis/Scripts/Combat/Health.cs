@@ -60,6 +60,33 @@ namespace Umbralis.Combat
             Revived?.Invoke();
         }
 
+        public void Heal(float amount)
+        {
+            if (!IsAlive || amount <= 0f) return;
+            Current = Mathf.Min(maxHealth, Current + amount);
+        }
+
+        /// <summary>
+        /// Hace daño a <paramref name="victim"/> en nombre de este personaje,
+        /// aplicando sus potenciaciones (multiplicador de daño, robo de vida).
+        /// Todo el daño de habilidades pasa por aquí. Devuelve el daño aplicado.
+        /// </summary>
+        public float DealDamage(Health victim, float amount, Vector3 hitDirection)
+        {
+            if (victim == null || !victim.IsAlive || amount <= 0f) return 0f;
+
+            if (statusEffects == null) statusEffects = GetComponent<StatusEffects>();
+            float multiplier = statusEffects != null ? statusEffects.DamageMultiplier : 1f;
+            float lifesteal = statusEffects != null ? statusEffects.Lifesteal : 0f;
+
+            float dealt = Mathf.Min(amount * multiplier, victim.Current);
+            victim.TakeDamage(amount * multiplier, hitDirection, this);
+            if (lifesteal > 0f) Heal(dealt * lifesteal);
+            return dealt;
+        }
+
+        private StatusEffects statusEffects;
+
         /// <summary>
         /// Enemigo vivo más cercano a <paramref name="origin"/> dentro de
         /// <paramref name="range"/> que no sea del equipo indicado. Null si no hay.

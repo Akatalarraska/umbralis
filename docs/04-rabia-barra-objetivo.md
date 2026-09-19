@@ -75,6 +75,8 @@ habrá que reutilizar instancias.
 - Código: `Scripts/Combat/TargetSelector.cs`, `TargetMarker.cs`,
   `Scripts/HUD/TargetHud.cs`, `Scripts/TouchControls/TapDetector.cs`,
   `TapToTarget.cs` y `CycleTargetButton.cs`.
+- Pendiente del diseño: prioridad automática configurable (más cercano / menos
+  vida / jugadores antes que NPC). Ahora es siempre "más cercano".
 
 ## 5. Enemigo básico con IA y ataque telegrafiado
 
@@ -89,8 +91,6 @@ Reparto de responsabilidades: `HitReaction` (parpadeo y empujón), `Respawner`
 (ocultar, esperar, revivir; también en el jugador, 3 s), `TrainingDummy` solo
 mueve el muñeco. La Rabia por daño recibido pasa a **0,4 por punto** (+6 por
 golpe de Acechador).
-- Pendiente del diseño: prioridad automática configurable (más cercano / menos
-  vida / jugadores antes que NPC). Ahora es siempre "más cercano".
 
 ## Pasos en Unity
 
