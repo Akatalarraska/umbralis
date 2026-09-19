@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Umbralis.HUD;
 using Umbralis.Player;
 
 namespace Umbralis.TouchControls
@@ -37,7 +38,7 @@ namespace Umbralis.TouchControls
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (dodge == null) return;
+            if (dodge == null || HudLayoutEditor.IsEditing) return;
             dodge.TryDodge(); // en recarga: el toque se ignora
         }
     }

@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Umbralis.Abilities;
 using Umbralis.Combat;
+using Umbralis.HUD;
 
 namespace Umbralis.TouchControls
 {
@@ -61,13 +62,19 @@ namespace Umbralis.TouchControls
                 baseColor = ability.buttonColor;
                 if (label != null) label.text = ability.displayName;
             }
+            else
+            {
+                // Ranura vacía: se ve, para poder colocarla, pero apagada.
+                baseColor = new Color(1f, 1f, 1f, 0.25f);
+                if (label != null) label.text = string.Empty;
+            }
             if (background != null) background.color = baseColor;
             if (cooldownOverlay != null) cooldownOverlay.fillAmount = 0f;
         }
 
         private void Update()
         {
-            if (caster == null) return;
+            if (caster == null || Ability == null) return;
             if (cooldownOverlay != null)
                 cooldownOverlay.fillAmount = caster.CooldownFraction(slot);
 
@@ -80,6 +87,7 @@ namespace Umbralis.TouchControls
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (HudLayoutEditor.IsEditing) return; // en modo edición el toque es para mover el botón
             if (activePointerId != NoPointer || caster == null || Ability == null) return;
             if (!caster.IsReady(slot) || !caster.CanAfford(slot)) return; // en enfriamiento o sin recurso: el toque se ignora
 

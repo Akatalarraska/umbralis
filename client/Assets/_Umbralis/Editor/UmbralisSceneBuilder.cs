@@ -324,7 +324,14 @@ namespace Umbralis.EditorTools
             foreach (AbilityDefinition a in new AbilityDefinition[] { melee, projectile, dash, blast })
                 EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
-            return new AbilityDefinition[] { melee, projectile, blast };
+
+            // 0 = básico, 1..6 = habilidades, 7 = definitiva. Las vacías se ven apagadas.
+            var slots = new AbilityDefinition[AbilityCaster.TotalSlots];
+            slots[AbilityCaster.BasicSlot] = melee;
+            slots[AbilityCaster.FirstAbilitySlot + 0] = projectile;
+            slots[AbilityCaster.FirstAbilitySlot + 1] = blast;
+            slots[AbilityCaster.FirstAbilitySlot + 2] = dash;
+            return slots;
         }
 
         private static void CreateDummies()
@@ -453,9 +460,11 @@ namespace Umbralis.EditorTools
         }
 
         /// <summary>
-        /// Botones de la esquina inferior derecha: ranuras de habilidad y esquiva.
-        /// Van después de LookZone en la jerarquía para quedar por encima y
-        /// capturar sus propios toques.
+        /// Barra de combate en la esquina inferior derecha: ataque básico grande,
+        /// 6 habilidades en arco alrededor, definitiva y esquiva separadas. Todos
+        /// los botones llevan <see cref="HudEditableElement"/> para poder moverse
+        /// y escalarse desde el modo de edición del HUD. Van después de LookZone
+        /// en la jerarquía para quedar por encima y capturar sus propios toques.
         /// </summary>
         private static void CreateAbilityBar(Transform hudRoot, AbilityCaster caster, PlayerDodge dodge, AimIndicator aimIndicator)
         {
@@ -466,17 +475,24 @@ namespace Umbralis.EditorTools
             barRt.anchoredPosition = Vector2.zero;
             barRt.sizeDelta = Vector2.zero;
 
-            // Posición (desde la esquina) y tamaño de cada ranura: la principal más grande.
-            (Vector2 pos, float size)[] layout =
+            // Posición (desde la esquina) y tamaño de cada ranura. Las 6 habilidades
+            // van en un arco de radio 400 alrededor del básico, de izquierda (185°)
+            // a arriba (75°), con 22° entre ellas para que no se toquen.
+            Vector2 basicPos = new Vector2(-190f, 190f);
+            var layout = new (Vector2 pos, float size)[AbilityCaster.TotalSlots];
+            layout[AbilityCaster.BasicSlot] = (basicPos, 210f);
+            for (int i = 0; i < AbilityCaster.AbilitySlotCount; i++)
             {
-                (new Vector2(-190f, 190f), 210f),
-                (new Vector2(-440f, 150f), 150f),
-                (new Vector2(-400f, 380f), 150f),
-            };
+                float angle = (185f - 22f * i) * Mathf.Deg2Rad;
+                Vector2 pos = basicPos + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 400f;
+                layout[AbilityCaster.FirstAbilitySlot + i] = (new Vector2(Mathf.Round(pos.x), Mathf.Round(pos.y)), 140f);
+            }
+            layout[AbilityCaster.UltimateSlot] = (new Vector2(-780f, 140f), 160f);
 
+            string[] names = { "Basico", "Habilidad1", "Habilidad2", "Habilidad3", "Habilidad4", "Habilidad5", "Habilidad6", "Definitiva" };
             for (int slot = 0; slot < layout.Length && slot < caster.SlotCount; slot++)
             {
-                GameObject go = CreateRoundButton($"Ability{slot}", bar.transform, layout[slot].pos, layout[slot].size,
+                GameObject go = CreateRoundButton(names[slot], bar.transform, layout[slot].pos, layout[slot].size,
                     out Image background, out Image overlay, out Text label);
 
                 AbilityButton button = go.AddComponent<AbilityButton>();
@@ -488,10 +504,9 @@ namespace Umbralis.EditorTools
                 SetReference(button, "label", label);
             }
 
-            // Esquiva: separada de las habilidades, a la izquierda del grupo y
-            // pegada al borde inferior para alcanzarla con el pulgar sin mirar.
+            // Esquiva: separada de las habilidades y cerca del pulgar (se usa mucho).
             {
-                GameObject go = CreateRoundButton("Dodge", bar.transform, new Vector2(-660f, 140f), 140f,
+                GameObject go = CreateRoundButton("Esquiva", bar.transform, new Vector2(-400f, 90f), 140f,
                     out Image background, out Image overlay, out Text label);
 
                 DodgeButton button = go.AddComponent<DodgeButton>();
@@ -500,6 +515,91 @@ namespace Umbralis.EditorTools
                 SetReference(button, "cooldownOverlay", overlay);
                 SetReference(button, "label", label);
             }
+
+            CreateHudLayoutEditor(hudRoot);
+        }
+
+        /// <summary>Botón "HUD" arriba a la derecha y panel de edición (oculto hasta pulsarlo).</summary>
+        private static void CreateHudLayoutEditor(Transform hudRoot)
+        {
+            var root = new GameObject("HudLayoutEditor", typeof(RectTransform));
+            root.transform.SetParent(hudRoot, false);
+            var rt = root.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+
+            Button toggle = CreateTextButton("ToggleEdit", root.transform, new Vector2(1f, 1f), new Vector2(-40f, -40f), new Vector2(120f, 60f), "HUD");
+
+            // Panel arriba en el centro con -, +, Restablecer, Listo y una pista.
+            var panel = new GameObject("EditPanel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(root.transform, false);
+            var panelRt = panel.GetComponent<RectTransform>();
+            panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 1f);
+            panelRt.anchoredPosition = new Vector2(0f, -20f);
+            panelRt.sizeDelta = new Vector2(900f, 150f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color = new Color(0f, 0f, 0f, 0.7f);
+            panelImage.raycastTarget = true; // tapa lo que haya debajo
+
+            Button smaller = CreateTextButton("Smaller", panel.transform, new Vector2(0f, 1f), new Vector2(30f, -20f), new Vector2(100f, 60f), "-");
+            Button bigger = CreateTextButton("Bigger", panel.transform, new Vector2(0f, 1f), new Vector2(150f, -20f), new Vector2(100f, 60f), "+");
+            Button reset = CreateTextButton("Reset", panel.transform, new Vector2(1f, 1f), new Vector2(-390f, -20f), new Vector2(220f, 60f), "Restablecer");
+            Button done = CreateTextButton("Done", panel.transform, new Vector2(1f, 1f), new Vector2(-150f, -20f), new Vector2(120f, 60f), "Listo");
+
+            var hintGo = new GameObject("Hint", typeof(RectTransform), typeof(Text));
+            hintGo.transform.SetParent(panel.transform, false);
+            var hintRt = hintGo.GetComponent<RectTransform>();
+            hintRt.anchorMin = new Vector2(0f, 0f);
+            hintRt.anchorMax = new Vector2(1f, 0f);
+            hintRt.pivot = new Vector2(0.5f, 0f);
+            hintRt.anchoredPosition = new Vector2(0f, 10f);
+            hintRt.sizeDelta = new Vector2(-40f, 50f);
+            var hint = hintGo.GetComponent<Text>();
+            hint.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            hint.fontSize = 26;
+            hint.alignment = TextAnchor.MiddleCenter;
+            hint.color = Color.white;
+            hint.raycastTarget = false;
+
+            HudLayoutEditor editor = root.AddComponent<HudLayoutEditor>();
+            SetReference(editor, "toggleButton", toggle);
+            SetReference(editor, "editPanel", panel);
+            SetReference(editor, "smallerButton", smaller);
+            SetReference(editor, "biggerButton", bigger);
+            SetReference(editor, "resetButton", reset);
+            SetReference(editor, "doneButton", done);
+            SetReference(editor, "hintLabel", hint);
+            panel.SetActive(false);
+        }
+
+        /// <summary>Botón rectangular clásico con texto, anclado donde se pida.</summary>
+        private static Button CreateTextButton(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, string text)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = anchor;
+            rt.anchoredPosition = position;
+            rt.sizeDelta = size;
+            var image = go.GetComponent<Image>();
+            image.color = new Color(1f, 1f, 1f, 0.85f);
+
+            var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            labelGo.transform.SetParent(go.transform, false);
+            var labelRt = labelGo.GetComponent<RectTransform>();
+            labelRt.anchorMin = Vector2.zero;
+            labelRt.anchorMax = Vector2.one;
+            labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
+            var label = labelGo.GetComponent<Text>();
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.fontSize = 30;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = new Color(0.1f, 0.1f, 0.1f);
+            label.text = text;
+            label.raycastTarget = false;
+
+            return go.GetComponent<Button>();
         }
 
         /// <summary>
@@ -545,6 +645,14 @@ namespace Umbralis.EditorTools
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(0.1f, 0.1f, 0.1f);
             label.raycastTarget = false;
+
+            // Movible y escalable desde el modo de edición del HUD.
+            Outline outline = go.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.9f, 0.2f);
+            outline.effectDistance = new Vector2(6f, -6f);
+            outline.enabled = false;
+            HudEditableElement editable = go.AddComponent<HudEditableElement>();
+            SetReference(editable, "highlight", outline);
 
             return go;
         }
