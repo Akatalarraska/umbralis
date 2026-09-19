@@ -59,7 +59,7 @@ namespace Umbralis.EditorTools
             CreateDummies();
             AimIndicator aimIndicator = CreateAimIndicator();
             CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
-            CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), aimIndicator);
+            CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), player.GetComponent<PlayerDodge>(), aimIndicator);
             CreateEventSystem();
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
 
@@ -218,6 +218,7 @@ namespace Umbralis.EditorTools
             controller.slopeLimit = 45f;
             controller.stepOffset = 0.3f;
             root.AddComponent<PlayerMovement>();
+            root.AddComponent<PlayerDodge>();
 
             Health health = root.AddComponent<Health>();
             SetEnum(health, "team", (int)Team.Player);
@@ -250,7 +251,11 @@ namespace Umbralis.EditorTools
         // Combate: habilidades, muñecos e indicador de apuntado
         // ------------------------------------------------------------------
 
-        /// <summary>Crea (o reutiliza) los assets de las cuatro habilidades de prueba en Data/.</summary>
+        /// <summary>
+        /// Crea (o reutiliza) los assets de habilidades de prueba en Data/ y devuelve
+        /// las que van en la barra. Cada asset es una muestra de un tipo de habilidad
+        /// (melé, proyectil, carga, zona) que luego reutilizarán todas las clases.
+        /// </summary>
         private static AbilityDefinition[] CreateAbilityAssets()
         {
             var melee = LoadOrCreateAsset<MeleeAbility>("Melee");
@@ -273,8 +278,10 @@ namespace Umbralis.EditorTools
             projectile.speed = 18f;
             projectile.fxMaterial = CreateMaterial("FxProjectile", new Color(1f, 0.5f, 0.1f));
 
+            // Carga con daño: tipo genérico (Salto, Carga con escudo...). No es la
+            // esquiva, que tiene botón propio (PlayerDodge), y no va en la barra.
             var dash = LoadOrCreateAsset<DashAbility>("Dash");
-            dash.displayName = "Embestida";
+            dash.displayName = "Carga";
             dash.buttonColor = new Color(0.3f, 0.85f, 1f);
             dash.cooldown = 4f;
             dash.range = 5f;
@@ -293,10 +300,10 @@ namespace Umbralis.EditorTools
             blast.radius = 2.5f;
             blast.fxMaterial = CreateMaterial("FxBlast", new Color(0.7f, 0.3f, 1f));
 
-            var all = new AbilityDefinition[] { melee, projectile, dash, blast };
-            foreach (AbilityDefinition a in all) EditorUtility.SetDirty(a);
+            foreach (AbilityDefinition a in new AbilityDefinition[] { melee, projectile, dash, blast })
+                EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
-            return all;
+            return new AbilityDefinition[] { melee, projectile, blast };
         }
 
         private static void CreateDummies()
@@ -425,14 +432,12 @@ namespace Umbralis.EditorTools
         }
 
         /// <summary>
-        /// Cuatro botones en la esquina inferior derecha. Van después de LookZone
-        /// en la jerarquía para quedar por encima y capturar sus propios toques.
+        /// Botones de la esquina inferior derecha: ranuras de habilidad y esquiva.
+        /// Van después de LookZone en la jerarquía para quedar por encima y
+        /// capturar sus propios toques.
         /// </summary>
-        private static void CreateAbilityBar(Transform hudRoot, AbilityCaster caster, AimIndicator aimIndicator)
+        private static void CreateAbilityBar(Transform hudRoot, AbilityCaster caster, PlayerDodge dodge, AimIndicator aimIndicator)
         {
-            Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
             var bar = new GameObject("AbilityBar", typeof(RectTransform));
             bar.transform.SetParent(hudRoot, false);
             var barRt = bar.GetComponent<RectTransform>();
@@ -446,43 +451,12 @@ namespace Umbralis.EditorTools
                 (new Vector2(-190f, 190f), 210f),
                 (new Vector2(-440f, 150f), 150f),
                 (new Vector2(-400f, 380f), 150f),
-                (new Vector2(-200f, 450f), 150f),
             };
 
             for (int slot = 0; slot < layout.Length && slot < caster.SlotCount; slot++)
             {
-                var go = new GameObject($"Ability{slot}", typeof(RectTransform), typeof(Image));
-                go.transform.SetParent(bar.transform, false);
-                var rt = go.GetComponent<RectTransform>();
-                rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
-                rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = layout[slot].pos;
-                rt.sizeDelta = Vector2.one * layout[slot].size;
-
-                Image background = go.GetComponent<Image>();
-                background.sprite = knob;
-                background.raycastTarget = true;
-
-                // Sombra radial que se vacía con el enfriamiento.
-                Image overlay = CreateImage("Cooldown", go.transform, knob, layout[slot].size, new Color(0f, 0f, 0f, 0.6f));
-                overlay.type = Image.Type.Filled;
-                overlay.fillMethod = Image.FillMethod.Radial360;
-                overlay.fillOrigin = (int)Image.Origin360.Top;
-                overlay.fillClockwise = false;
-                overlay.fillAmount = 0f;
-
-                var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
-                labelGo.transform.SetParent(go.transform, false);
-                var labelRt = labelGo.GetComponent<RectTransform>();
-                labelRt.anchorMin = Vector2.zero;
-                labelRt.anchorMax = Vector2.one;
-                labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
-                Text label = labelGo.GetComponent<Text>();
-                label.font = font;
-                label.fontSize = 28;
-                label.alignment = TextAnchor.MiddleCenter;
-                label.color = new Color(0.1f, 0.1f, 0.1f);
-                label.raycastTarget = false;
+                GameObject go = CreateRoundButton($"Ability{slot}", bar.transform, layout[slot].pos, layout[slot].size,
+                    out Image background, out Image overlay, out Text label);
 
                 AbilityButton button = go.AddComponent<AbilityButton>();
                 SetReference(button, "caster", caster);
@@ -492,6 +466,66 @@ namespace Umbralis.EditorTools
                 SetReference(button, "cooldownOverlay", overlay);
                 SetReference(button, "label", label);
             }
+
+            // Esquiva: separada de las habilidades, a la izquierda del grupo y
+            // pegada al borde inferior para alcanzarla con el pulgar sin mirar.
+            {
+                GameObject go = CreateRoundButton("Dodge", bar.transform, new Vector2(-660f, 140f), 140f,
+                    out Image background, out Image overlay, out Text label);
+
+                DodgeButton button = go.AddComponent<DodgeButton>();
+                SetReference(button, "dodge", dodge);
+                SetReference(button, "background", background);
+                SetReference(button, "cooldownOverlay", overlay);
+                SetReference(button, "label", label);
+            }
+        }
+
+        /// <summary>
+        /// Botón redondo anclado a la esquina inferior derecha, con sombra radial
+        /// de recarga y etiqueta centrada. El componente de comportamiento lo
+        /// añade quien llama.
+        /// </summary>
+        private static GameObject CreateRoundButton(string name, Transform parent, Vector2 position, float size,
+            out Image background, out Image cooldownOverlay, out Text label)
+        {
+            Sprite knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = position;
+            rt.sizeDelta = Vector2.one * size;
+
+            background = go.GetComponent<Image>();
+            background.sprite = knob;
+            background.raycastTarget = true;
+
+            // Sombra radial que se vacía con el enfriamiento.
+            cooldownOverlay = CreateImage("Cooldown", go.transform, knob, size, new Color(0f, 0f, 0f, 0.6f));
+            cooldownOverlay.type = Image.Type.Filled;
+            cooldownOverlay.fillMethod = Image.FillMethod.Radial360;
+            cooldownOverlay.fillOrigin = (int)Image.Origin360.Top;
+            cooldownOverlay.fillClockwise = false;
+            cooldownOverlay.fillAmount = 0f;
+
+            var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            labelGo.transform.SetParent(go.transform, false);
+            var labelRt = labelGo.GetComponent<RectTransform>();
+            labelRt.anchorMin = Vector2.zero;
+            labelRt.anchorMax = Vector2.one;
+            labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
+            label = labelGo.GetComponent<Text>();
+            label.font = font;
+            label.fontSize = 28;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = new Color(0.1f, 0.1f, 0.1f);
+            label.raycastTarget = false;
+
+            return go;
         }
 
         /// <summary>Panel invisible que recibe toques en la porción de pantalla indicada.</summary>

@@ -18,9 +18,7 @@ prueba en el móvil antes de seguir.
 - [x] Joystick virtual flotante en la mitad izquierda de la pantalla
 - [ ] Cámara controlada arrastrando en la mitad derecha, con pellizco para zoom
       *(hecho el arrastre; falta el pellizco)*
-- [ ] Esquiva (Embestida) con recarga
-      *(existe `DashAbility` con recarga, pero como ranura de la barra y con daño;
-      falta sacarla a un botón de esquiva propio)*
+- [x] Esquiva (Embestida) con recarga
 - [ ] Sistema de habilidades por datos: cada habilidad es un ScriptableObject con
       nombre, daño, coste de recurso, recarga, alcance y tipo de apuntado
       *(hecho `AbilityDefinition` con nombre, recarga, alcance y apuntado;

@@ -25,8 +25,12 @@ personaje. Al lanzar, el personaje encara la dirección durante
 |----------------|----------------------|-----------|--------------------------------------------|
 | `Melee`        | `MeleeAbility`       | Dirección | 20 daño, cono 100°, alcance 2.5, CD 0.5 s  |
 | `Projectile`   | `ProjectileAbility`  | Dirección | 30 daño, 18 m/s, alcance 14, CD 2 s        |
-| `Dash`         | `DashAbility`        | Dirección | 15 daño, 5 m en 0.2 s, CD 4 s              |
+| `Dash`         | `DashAbility`        | Dirección | 15 daño, 5 m en 0.2 s, CD 4 s (tipo "Carga"; no va en la barra) |
 | `AreaBlast`    | `AreaBlastAbility`   | Punto     | 40 daño, radio 2.5, alcance 8, CD 6 s      |
+
+Cada asset es una muestra de un **tipo** de habilidad; las habilidades reales de
+cada clase serán assets de estos tipos (y de los que se añadan: sangrado,
+aturdir, interrumpir…). La esquiva no es una habilidad: ver `03-esquiva.md`.
 
 Todos los números se editan en el Inspector del asset y se aplican sin tocar
 código. Nuevas habilidades: heredar de `AbilityDefinition`, implementar
@@ -57,7 +61,6 @@ código. Nuevas habilidades: heredar de `AbilityDefinition`, implementar
   quita vida (barra verde sobre la cabeza); el muñeco parpadea y retrocede.
 - Mantener "Disparo" y arrastrar muestra la franja amarilla; soltar dispara una
   esfera naranja que se para en cubos y muñecos.
-- "Embestida" desplaza al personaje 5 m y golpea a quien pille por el camino.
 - "Estallido" muestra un disco en el punto; el disco no pasa del alcance (8 m).
 - Volver con el pulgar al botón lo pone rojo y al soltar no pasa nada.
 - Los muñecos muertos desaparecen y vuelven a los 2 s con la vida completa.
