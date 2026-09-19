@@ -1,4 +1,5 @@
 using UnityEngine;
+using Umbralis.Core;
 
 namespace Umbralis.Abilities
 {
@@ -12,7 +13,11 @@ namespace Umbralis.Abilities
     public sealed class SpecializationDefinition : ScriptableObject
     {
         public string displayName = "Especialización";
+        [Tooltip("Nombre con la facción Pacto Oscuro (vacío = el mismo).")]
+        public string mirrorName = "";
         [TextArea] public string description;
+
+        public string DisplayName => FactionSettings.IsPacto && !string.IsNullOrEmpty(mirrorName) ? mirrorName : displayName;
 
         [Header("Kit")]
         public AbilityDefinition basicAttack;

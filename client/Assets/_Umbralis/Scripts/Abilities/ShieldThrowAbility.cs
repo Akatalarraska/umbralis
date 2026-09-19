@@ -66,7 +66,7 @@ namespace Umbralis.Abilities
                 SpawnFx(PrimitiveType.Cube, from + seg * 0.5f, Quaternion.LookRotation(seg.normalized, Vector3.up), new Vector3(0.35f, 0.35f, seg.magnitude), bounceDelay);
                 Vector3 toCaster = caster.transform.position - current.transform.position;
                 toCaster.y = 0f;
-                caster.Health.DealDamage(current, damage, -toCaster.normalized, displayName);
+                caster.Health.DealDamage(current, damage, -toCaster.normalized, DisplayName);
                 HitReaction reaction = current.GetComponent<HitReaction>();
                 if (reaction != null && pullDistance > 0f) reaction.Push(toCaster.normalized * pullDistance, 0.2f);
                 EnemyBrain brain = current.GetComponent<EnemyBrain>();

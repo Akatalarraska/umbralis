@@ -72,7 +72,7 @@ namespace Umbralis.Abilities
 
                 // Espinas: se devuelve una parte de lo que iba a entrar, sin pasar por más modificadores nuestros.
                 if (def.thorns > 0f && attacker != null && attacker != self && attacker.IsAlive)
-                    attacker.TakeDamage(original * def.thorns, (attacker.transform.position - self.transform.position).normalized, self, def.displayName);
+                    attacker.TakeDamage(original * def.thorns, (attacker.transform.position - self.transform.position).normalized, self, def.DisplayName);
 
                 if (def.preventDeath && amount >= self.Current) amount = Mathf.Max(0f, self.Current - 1f);
                 return amount;

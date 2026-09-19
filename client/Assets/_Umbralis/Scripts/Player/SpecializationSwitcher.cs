@@ -27,6 +27,14 @@ namespace Umbralis.Player
 
         public event Action<SpecializationDefinition> Changed;
 
+        /// <summary>Sustituye las especializaciones (cambio de clase) y activa la primera.</summary>
+        public void SetSpecializations(SpecializationDefinition[] specs)
+        {
+            specializations = specs ?? new SpecializationDefinition[0];
+            activeIndex = 0;
+            if (caster != null) Apply(0, force: true);
+        }
+
         private AbilityCaster caster;
         private ClassResource resource;
         private Behaviour attachedPassive;

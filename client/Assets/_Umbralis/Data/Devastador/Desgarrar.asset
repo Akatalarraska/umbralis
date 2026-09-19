@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.MeleeAbility
   displayName: Desgarrar
   buttonColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  hasMirror: 0
+  mirrorName: 
+  mirrorColor: {r: 1, g: 1, b: 1, a: 1}
+  mirrorFxMaterial: {fileID: 0}
   damage: 12
   cooldown: 6
   range: 2.5

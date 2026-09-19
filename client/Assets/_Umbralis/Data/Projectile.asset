@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.ProjectileAbility
   displayName: Disparo
   buttonColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  hasMirror: 0
+  mirrorName: 
+  mirrorColor: {r: 1, g: 1, b: 1, a: 1}
+  mirrorFxMaterial: {fileID: 0}
   damage: 30
   cooldown: 2
   range: 14

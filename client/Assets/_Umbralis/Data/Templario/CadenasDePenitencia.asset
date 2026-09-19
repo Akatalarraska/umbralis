@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e37ff47dc8cf9344cbba5019a7e0c305, type: 3}
+  m_Name: CadenasDePenitencia
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.WarCryAbility
+  displayName: Cadenas de penitencia
+  buttonColor: {r: 1, g: 0.9, b: 0.3, a: 1}
+  hasMirror: 1
+  mirrorName: Cadenas del pacto
+  mirrorColor: {r: 0.6, g: 0.9, b: 0.5, a: 1}
+  mirrorFxMaterial: {fileID: 2100000, guid: 446a3f306ecddb347a7e3b558e492bde, type: 2}
+  damage: 0
+  cooldown: 15
+  range: 6
+  aimMode: 0
+  resourceCost: 0
+  resourceGain: 10
+  faceLockDuration: 0.25
+  fxMaterial: {fileID: 2100000, guid: ceaf54986e7a283408e9bc9a8b3b0936, type: 2}
+  slowFraction: 0.5
+  slowDuration: 4

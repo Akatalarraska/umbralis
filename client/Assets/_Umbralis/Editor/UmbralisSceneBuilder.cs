@@ -26,7 +26,7 @@ namespace Umbralis.EditorTools
     /// cámara, HUD con las dos zonas táctiles y el joystick, EventSystem y
     /// bootstrap. Se puede volver a ejecutar: sobrescribe la escena generada.
     /// </summary>
-    public static class UmbralisSceneBuilder
+    public static partial class UmbralisSceneBuilder
     {
         private const string RootFolder = "Assets/_Umbralis";
         private const string ScenesFolder = RootFolder + "/Scenes";
@@ -64,8 +64,8 @@ namespace Umbralis.EditorTools
 
             CreateLight();
             CreateArena();
-            SpecializationDefinition[] specs = CreateAbilityAssets();
-            GameObject player = CreatePlayer(specs);
+            ClassDefinition[] classes = CreateAbilityAssets();
+            GameObject player = CreatePlayer(classes);
             GameObject camera = CreateCamera();
             CreateDummies();
             CreateAllyDummy();
@@ -223,8 +223,9 @@ namespace Umbralis.EditorTools
             }
         }
 
-        private static GameObject CreatePlayer(SpecializationDefinition[] specs)
+        private static GameObject CreatePlayer(ClassDefinition[] classes)
         {
+            SpecializationDefinition[] specs = classes[0].specializations;
             Material playerMat = CreateMaterial("Player", new Color(0.25f, 0.55f, 0.95f));
             Material markerMat = CreateMaterial("PlayerMarker", new Color(0.95f, 0.85f, 0.2f));
 
@@ -265,6 +266,10 @@ namespace Umbralis.EditorTools
             SetArray(switcher, "specializations", specs);
             SetInt(switcher, "activeIndex", 0);
 
+            PlayerClass playerClass = root.AddComponent<PlayerClass>();
+            SetArray(playerClass, "classes", classes);
+            SetInt(playerClass, "activeIndex", 0);
+
             // Cuerpo: cápsula sin collider (el CharacterController ya hace de collider).
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             body.name = "Body";
@@ -272,6 +277,7 @@ namespace Umbralis.EditorTools
             body.transform.localPosition = new Vector3(0f, 1f, 0f);
             Object.DestroyImmediate(body.GetComponent<Collider>());
             body.GetComponent<Renderer>().sharedMaterial = playerMat;
+            SetReference(playerClass, "body", body.GetComponent<Renderer>());
 
             // Cubito delante para ver hacia dónde mira el personaje.
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -300,7 +306,7 @@ namespace Umbralis.EditorTools
         /// las que van en la barra. Cada asset es una muestra de un tipo de habilidad
         /// (melé, proyectil, carga, zona) que luego reutilizarán todas las clases.
         /// </summary>
-        private static SpecializationDefinition[] CreateAbilityAssets()
+        private static ClassDefinition[] CreateAbilityAssets()
         {
             var melee = LoadOrCreateAsset<MeleeAbility>("Melee");
             melee.displayName = "Golpe";
@@ -356,7 +362,10 @@ namespace Umbralis.EditorTools
                 EditorUtility.SetDirty(a);
             AssetDatabase.SaveAssets();
 
-            return new[] { CreateDevastadorKit(melee), CreateBaluarteKit(melee) };
+            EnsureFolder(ClassesFolder);
+            ClassDefinition conquistador = CreateConquistadorClass(CreateDevastadorKit(melee), CreateBaluarteKit(melee));
+            ClassDefinition templario = CreateTemplarClass(melee);
+            return new[] { conquistador, templario };
         }
 
         /// <summary>
@@ -1169,6 +1178,18 @@ namespace Umbralis.EditorTools
             SetReference(specHud, "button", specButton);
             SetReference(specHud, "label", specButton.GetComponentInChildren<Text>());
             SetReference(specHud, "background", specButton.GetComponent<Image>());
+
+            // Prototipo: cambiar de clase (fuera de combate) y de facción (solo nombres y colores).
+            // Van abajo en el centro, que está libre; arriba pisarían el panel del objetivo.
+            Button classButton = CreateTextButton("Class", hudRoot, new Vector2(0.5f, 0f), new Vector2(-130f, 24f), new Vector2(240f, 50f), "Clase");
+            Button factionButton = CreateTextButton("Faction", hudRoot, new Vector2(0.5f, 0f), new Vector2(130f, 24f), new Vector2(240f, 50f), "Facción");
+            ClassAndFactionHud cfHud = classButton.gameObject.AddComponent<ClassAndFactionHud>();
+            SetReference(cfHud, "playerClass", health.GetComponent<PlayerClass>());
+            SetReference(cfHud, "classButton", classButton);
+            SetReference(cfHud, "classLabel", classButton.GetComponentInChildren<Text>());
+            SetReference(cfHud, "classBackground", classButton.GetComponent<Image>());
+            SetReference(cfHud, "factionButton", factionButton);
+            SetReference(cfHud, "factionLabel", factionButton.GetComponentInChildren<Text>());
         }
 
         private static HudBar CreateHudBar(string name, Transform parent, Vector2 position, Vector2 size, Color fillColor)

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9608e987caabdec4ba7050ba4730a1d1, type: 3}
+  m_Name: BrasasDelJuicio
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Passives.EmberPassiveDefinition
+  displayName: Brasas del juicio
+  description: "Algunos golpes (30 %) dejan una brasa bajo la v\xEDctima; pisarla
+    cura un 5 % y da 10 de recurso."
+  chance: 0.3
+  healFraction: 0.05
+  resourceGain: 10
+  lifetime: 10
+  material: {fileID: 2100000, guid: e1d6e14df2ae3d3439b24505319f414d, type: 2}
+  mirrorMaterial: {fileID: 2100000, guid: 54f75077782a9934d847f32e1d8ea904, type: 2}

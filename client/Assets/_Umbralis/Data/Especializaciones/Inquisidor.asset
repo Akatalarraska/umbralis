@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cfb87ad294df234fac90c093e05f9d1, type: 3}
+  m_Name: Inquisidor
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.SpecializationDefinition
+  displayName: Inquisidor
+  mirrorName: Segador
+  description: "Da\xF1o del Templario / Juramentado."
+  basicAttack: {fileID: 11400000, guid: 068933b51ad2bec46bd5f77d2c51adef, type: 2}
+  abilities:
+  - {fileID: 11400000, guid: f6e5ec6038342ad44b2f15a084e1f98e, type: 2}
+  - {fileID: 11400000, guid: 89eb0a741cd26924999e63dd35ddf2a7, type: 2}
+  - {fileID: 11400000, guid: 0015441012e82974ca0e5064b74d4f5a, type: 2}
+  - {fileID: 11400000, guid: abdaa3d764dbaa544988d075c638430b, type: 2}
+  - {fileID: 11400000, guid: 7f4c4e3d527d28940904bdc5f8664bc0, type: 2}
+  - {fileID: 11400000, guid: 645a753b1f0b3f64ba01b700bce95efe, type: 2}
+  - {fileID: 11400000, guid: 3a3c2260c961bdd40b76f60300b5cd9c, type: 2}
+  - {fileID: 11400000, guid: 74c6859c9e0e97d4198346065f6b4db4, type: 2}
+  - {fileID: 11400000, guid: e41ac22fff58eaa44936525b228d7a25, type: 2}
+  - {fileID: 11400000, guid: b64de1339e91f1149a060c293e7c36c2, type: 2}
+  ultimates:
+  - {fileID: 11400000, guid: a128afbf972234a4aac04b36c4cc05d8, type: 2}
+  - {fileID: 11400000, guid: 1fcef0382622318449835372fdab38f9, type: 2}
+  passive: {fileID: 11400000, guid: d977464e6e40f524d8a8ec508c7d795a, type: 2}
+  defaultAbilityIndices: 000000000100000002000000040000000700000008000000
+  defaultUltimateIndex: 1

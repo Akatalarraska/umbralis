@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76227c445cd78b94ead3f4b919ce0ad0, type: 3}
+  m_Name: FervorCurativo
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Passives.ZealPassiveDefinition
+  displayName: Fervor curativo
+  description: "Parte del da\xF1o que hace le cura: del 10 % con la vida llena al
+    40 % al borde de la muerte."
+  minHealFraction: 0.1
+  maxHealFraction: 0.4

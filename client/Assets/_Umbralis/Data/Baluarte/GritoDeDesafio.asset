@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.TauntAbility
   displayName: "Grito de desaf\xEDo"
   buttonColor: {r: 1, g: 0.9, b: 0.3, a: 1}
+  hasMirror: 0
+  mirrorName: 
+  mirrorColor: {r: 1, g: 1, b: 1, a: 1}
+  mirrorFxMaterial: {fileID: 0}
   damage: 0
   cooldown: 20
   range: 8

@@ -71,7 +71,7 @@ namespace Umbralis.Abilities
             {
                 if (protector == null || !protector.IsAlive) return amount;
                 float taken = amount * def.share;
-                protector.TakeDamage(taken, hitDirection, attacker, def.displayName);
+                protector.TakeDamage(taken, hitDirection, attacker, def.DisplayName);
                 return amount - taken;
             }
         }

@@ -57,13 +57,17 @@ namespace Umbralis.TouchControls
         private void Start()
         {
             if (caster != null) caster.SlotsChanged += Refresh;
+            Core.FactionSettings.Changed += OnFactionChanged;
             Refresh();
         }
 
         private void OnDestroy()
         {
             if (caster != null) caster.SlotsChanged -= Refresh;
+            Core.FactionSettings.Changed -= OnFactionChanged;
         }
+
+        private void OnFactionChanged(Core.Faction _) => Refresh();
 
         /// <summary>Nombre y color según la habilidad que haya ahora en la ranura.</summary>
         private void Refresh()
@@ -72,8 +76,8 @@ namespace Umbralis.TouchControls
             AbilityDefinition ability = Ability;
             if (ability != null)
             {
-                baseColor = ability.buttonColor;
-                if (label != null) label.text = ability.displayName;
+                baseColor = ability.ButtonColor;
+                if (label != null) label.text = ability.DisplayName;
             }
             else
             {

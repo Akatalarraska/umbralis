@@ -13,7 +13,7 @@ namespace Umbralis.Passives
         public override Behaviour Attach(GameObject owner, SpecializationDefinition spec)
         {
             var passive = owner.AddComponent<BattleThirstPassive>();
-            passive.basicAttackName = spec != null && spec.basicAttack != null ? spec.basicAttack.displayName : string.Empty;
+            passive.basicAttackName = spec != null && spec.basicAttack != null ? spec.basicAttack.DisplayName : string.Empty;
             passive.resourceThreshold = resourceThreshold;
             passive.basicMultiplier = basicMultiplier;
             return passive;

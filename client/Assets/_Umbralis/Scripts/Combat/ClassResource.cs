@@ -33,6 +33,22 @@ namespace Umbralis.Combat
 
         public string DisplayName => displayName;
         public float Max => max;
+
+        /// <summary>Reconfigura el recurso (al cambiar de clase). Empieza en su valor inicial.</summary>
+        public void Configure(string name, float maximum, float start, float perHit, float perDamageTaken, float outOfCombatPerSecond)
+        {
+            displayName = name;
+            max = Mathf.Max(1f, maximum);
+            startValue = start;
+            gainPerHitDealt = perHit;
+            gainPerDamageTaken = perDamageTaken;
+            outOfCombatChangePerSecond = outOfCombatPerSecond;
+            Current = Mathf.Clamp(startValue, 0f, max);
+            Changed?.Invoke();
+        }
+
+        /// <summary>Solo el nombre (cambio de facción: Fervor → Tributo).</summary>
+        public void Rename(string name) => displayName = name;
         public float Current { get; private set; }
         public float Fraction => Current / max;
         public bool InCombat => Time.time - lastCombatTime < combatTimeout;

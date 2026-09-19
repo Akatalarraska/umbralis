@@ -25,13 +25,17 @@ namespace Umbralis.HUD
         private void OnEnable()
         {
             if (switcher != null) switcher.Changed += OnChanged;
+            Core.FactionSettings.Changed += OnFactionChanged;
             OnChanged(switcher != null ? switcher.Active : null);
         }
 
         private void OnDisable()
         {
             if (switcher != null) switcher.Changed -= OnChanged;
+            Core.FactionSettings.Changed -= OnFactionChanged;
         }
+
+        private void OnFactionChanged(Core.Faction _) => OnChanged(switcher != null ? switcher.Active : null);
 
         private void Update()
         {
@@ -43,7 +47,7 @@ namespace Umbralis.HUD
 
         private void OnChanged(SpecializationDefinition spec)
         {
-            if (label != null) label.text = spec != null ? spec.displayName : "—";
+            if (label != null) label.text = spec != null ? spec.DisplayName : "—";
             HudLayoutEditor.SetProfile(spec != null ? spec.name : "default");
         }
     }

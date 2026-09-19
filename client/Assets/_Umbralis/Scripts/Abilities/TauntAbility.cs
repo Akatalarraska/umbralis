@@ -52,7 +52,7 @@ namespace Umbralis.Abilities
             if (brain == null) return; // los muñecos no tienen a quién atacar
             brain.Taunt(self, duration);
             brain.AddThreat(self, threat);
-            if (damage > 0f) self.DealDamage(enemy, damage, (enemy.transform.position - self.transform.position).normalized, displayName);
+            if (damage > 0f) self.DealDamage(enemy, damage, (enemy.transform.position - self.transform.position).normalized, DisplayName);
         }
     }
 }

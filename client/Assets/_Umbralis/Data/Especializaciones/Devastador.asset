@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Devastador
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.SpecializationDefinition
   displayName: Devastador
+  mirrorName: 
   description: "Da\xF1o cuerpo a cuerpo. Arma a dos manos o dos armas a una mano."
   basicAttack: {fileID: 11400000, guid: 068933b51ad2bec46bd5f77d2c51adef, type: 2}
   abilities:

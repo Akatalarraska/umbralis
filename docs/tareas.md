@@ -48,8 +48,9 @@ Empezada el 19-09-2026 con la Fase 1 en código pero sin cerrar en el móvil
 
 - [x] Baluarte (tanque) con su pasiva Muralla y sus 10 habilidades
 - [x] Cambio de especialización gratis fuera de combate, con barra propia
-- [ ] Templario/Juramentado, para tener la clase espejo y comprobar que los
+- [x] Templario/Juramentado, para tener la clase espejo y comprobar que los
       números son idénticos y solo cambia lo visual
+      *(nombres del Pacto que el GDD no fija: provisionales, ver 08-templario-juramentado.md)*
 
 ## Fase 3 — Prueba de red
 

@@ -81,7 +81,7 @@ namespace Umbralis.Abilities
             {
                 float amount = damage * chargeBonus;
                 if (executeThreshold > 0f && victim.Fraction <= executeThreshold) amount *= executeMultiplier;
-                attacker.DealDamage(victim, amount, direction, displayName);
+                attacker.DealDamage(victim, amount, direction, DisplayName);
 
                 if (threat > 0f)
                 {
@@ -91,7 +91,7 @@ namespace Umbralis.Abilities
 
                 StatusEffects status = victim.GetComponent<StatusEffects>();
                 if (status == null) return;
-                if (bleedDamagePerTick > 0f && bleedDuration > 0f) status.ApplyBleed(attacker, bleedDamagePerTick, bleedInterval, bleedDuration, displayName + " (sangrado)");
+                if (bleedDamagePerTick > 0f && bleedDuration > 0f) status.ApplyBleed(attacker, bleedDamagePerTick, bleedInterval, bleedDuration, DisplayName + " (sangrado)");
                 if (stunDuration > 0f) status.ApplyStun(stunDuration);
                 if (interrupts) status.Interrupt();
             });

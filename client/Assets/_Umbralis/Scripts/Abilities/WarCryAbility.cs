@@ -26,7 +26,7 @@ namespace Umbralis.Abilities
                 if ((h.transform.position - center).sqrMagnitude > range * range) continue;
                 StatusEffects status = h.GetComponent<StatusEffects>();
                 if (status != null) status.ApplySlow(slowFraction, slowDuration);
-                if (damage > 0f) context.Caster.Health.DealDamage(h, damage, (h.transform.position - center).normalized, displayName);
+                if (damage > 0f) context.Caster.Health.DealDamage(h, damage, (h.transform.position - center).normalized, DisplayName);
             }
 
             // Onda: un anillo plano que se ve un instante alrededor del personaje.

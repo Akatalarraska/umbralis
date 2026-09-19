@@ -1,5 +1,6 @@
 using UnityEngine;
 using Umbralis.Combat;
+using Umbralis.Core;
 
 namespace Umbralis.Abilities
 {
@@ -44,6 +45,18 @@ namespace Umbralis.Abilities
         [Header("Presentación")]
         public string displayName = "Habilidad";
         public Color buttonColor = Color.white;
+
+        [Header("Espejo (Pacto Oscuro)")]
+        [Tooltip("Si está marcado, con la facción Pacto Oscuro se usan el nombre, color y efecto de abajo. Los números son los mismos.")]
+        public bool hasMirror = false;
+        public string mirrorName = "";
+        public Color mirrorColor = Color.white;
+        public Material mirrorFxMaterial;
+
+        /// <summary>Nombre según la facción activa. Úsalo en lugar de <see cref="displayName"/> en tiempo de ejecución.</summary>
+        public string DisplayName => hasMirror && FactionSettings.IsPacto && !string.IsNullOrEmpty(mirrorName) ? mirrorName : displayName;
+        public Color ButtonColor => hasMirror && FactionSettings.IsPacto ? mirrorColor : buttonColor;
+        public Material FxMaterial => hasMirror && FactionSettings.IsPacto && mirrorFxMaterial != null ? mirrorFxMaterial : fxMaterial;
 
         [Header("Lanzamiento")]
         [Tooltip("Daño base. Cada tipo decide cómo lo aplica (cono, proyectil, área...).")]
@@ -91,7 +104,7 @@ namespace Umbralis.Abilities
                 if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
 
                 Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
-                attacker.DealDamage(h, damage, push, displayName);
+                attacker.DealDamage(h, damage, push, DisplayName);
                 onHit?.Invoke(h);
                 hits++;
             }
@@ -106,11 +119,11 @@ namespace Umbralis.Abilities
         protected GameObject SpawnFx(PrimitiveType type, Vector3 position, Quaternion rotation, Vector3 scale, float lifetime)
         {
             GameObject fx = GameObject.CreatePrimitive(type);
-            fx.name = $"{displayName} FX";
+            fx.name = $"{DisplayName} FX";
             Object.Destroy(fx.GetComponent<Collider>());
             fx.transform.SetPositionAndRotation(position, rotation);
             fx.transform.localScale = scale;
-            if (fxMaterial != null) fx.GetComponent<Renderer>().sharedMaterial = fxMaterial;
+            if (FxMaterial != null) fx.GetComponent<Renderer>().sharedMaterial = FxMaterial;
             Object.Destroy(fx, lifetime);
             return fx;
         }
@@ -131,7 +144,7 @@ namespace Umbralis.Abilities
                 if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
 
                 Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
-                attacker.DealDamage(h, damage, push, displayName);
+                attacker.DealDamage(h, damage, push, DisplayName);
                 hits++;
             }
             return hits;

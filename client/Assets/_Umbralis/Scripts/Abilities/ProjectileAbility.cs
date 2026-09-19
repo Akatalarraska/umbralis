@@ -14,14 +14,14 @@ namespace Umbralis.Abilities
         public override void Execute(in AbilityContext context)
         {
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = $"{displayName} Projectile";
+            go.name = $"{DisplayName} Projectile";
             Object.Destroy(go.GetComponent<Collider>()); // el proyectil se detecta a sí mismo por SphereCast
             go.transform.position = context.Origin + context.Direction * 0.8f;
             go.transform.localScale = Vector3.one * (radius * 2f);
-            if (fxMaterial != null) go.GetComponent<Renderer>().sharedMaterial = fxMaterial;
+            if (FxMaterial != null) go.GetComponent<Renderer>().sharedMaterial = FxMaterial;
 
             go.AddComponent<Projectile>().Launch(
-                context.Caster.Health, context.Direction, speed, range, damage, radius, displayName);
+                context.Caster.Health, context.Direction, speed, range, damage, radius, DisplayName);
         }
     }
 }

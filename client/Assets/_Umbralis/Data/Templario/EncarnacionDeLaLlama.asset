@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7528ab8080e9e964fb1e01b4da8e37ba, type: 3}
+  m_Name: EncarnacionDeLaLlama
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.SelfBuffAbility
+  displayName: "Encarnaci\xF3n de la llama"
+  buttonColor: {r: 1, g: 0.25, b: 0.2, a: 1}
+  hasMirror: 1
+  mirrorName: "Coloso de los ca\xEDdos"
+  mirrorColor: {r: 0.4, g: 0.2, b: 0.7, a: 1}
+  mirrorFxMaterial: {fileID: 2100000, guid: 446a3f306ecddb347a7e3b558e492bde, type: 2}
+  damage: 0
+  cooldown: 60
+  range: 1
+  aimMode: 0
+  resourceCost: 0
+  resourceGain: 0
+  faceLockDuration: 0.25
+  fxMaterial: {fileID: 2100000, guid: 690fe03aba8d5034388f2b9a844d6ff7, type: 2}
+  duration: 8
+  radius: 8
+  damageReduction: 0.3
+  frontalDamageReduction: 0
+  thorns: 0
+  preventDeath: 0

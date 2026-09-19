@@ -37,7 +37,7 @@ namespace Umbralis.Abilities
                     to.y = 0f;
                     if (to.sqrMagnitude > hitRadius * hitRadius) continue;
                     alreadyHit.Add(h);
-                    context.Caster.Health.DealDamage(h, damage, context.Direction, displayName);
+                    context.Caster.Health.DealDamage(h, damage, context.Direction, DisplayName);
                     if (stunDuration > 0f)
                     {
                         Combat.StatusEffects status = h.GetComponent<Combat.StatusEffects>();

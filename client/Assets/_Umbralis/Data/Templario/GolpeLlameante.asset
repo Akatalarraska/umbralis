@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba0ccf13460b58e4f8be5a683cc30316, type: 3}
+  m_Name: GolpeLlameante
+  m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.MeleeAbility
+  displayName: Golpe llameante
+  buttonColor: {r: 1, g: 0.97, b: 0.85, a: 1}
+  hasMirror: 1
+  mirrorName: Golpe sepulcral
+  mirrorColor: {r: 0.8, g: 0.95, b: 0.85, a: 1}
+  mirrorFxMaterial: {fileID: 2100000, guid: 446a3f306ecddb347a7e3b558e492bde, type: 2}
+  damage: 22
+  cooldown: 4
+  range: 2.5
+  aimMode: 0
+  resourceCost: 0
+  resourceGain: 10
+  faceLockDuration: 0.25
+  fxMaterial: {fileID: 2100000, guid: 82f6682830e7375479cbe0a8f9c44dc6, type: 2}
+  coneDegrees: 90
+  hitCount: 1
+  hitInterval: 0.2
+  executeThreshold: 0
+  executeMultiplier: 3
+  bleedDamagePerTick: 0
+  bleedInterval: 1
+  bleedDuration: 0
+  threat: 30
+  bonusPerBulwarkCharge: 0
+  stunDuration: 0
+  interrupts: 0
