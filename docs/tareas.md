@@ -4,25 +4,32 @@ Orden de trabajo. No pases de fase sin probar en un móvil real.
 
 ## Fase 0 — Repositorio
 
-- [ ] `.gitignore` oficial de Unity en la raíz
-- [ ] `.gitattributes` con Git LFS para `.fbx .png .jpg .wav .anim .psd`
-- [ ] Proyecto Unity (URP) en `client/`, orientación horizontal bloqueada
-- [ ] Compilar un APK vacío e instalarlo en el móvil, para tener el ciclo montado
+- [x] `.gitignore` oficial de Unity en la raíz
+- [x] `.gitattributes` con Git LFS para `.fbx .png .jpg .wav .anim .psd`
+- [x] Proyecto Unity (URP) en `client/`, orientación horizontal bloqueada
+- [x] Compilar un APK vacío e instalarlo en el móvil, para tener el ciclo montado
 
 ## Fase 1 — Prueba de combate (fase actual)
 
 El objetivo es saber si el combate es divertido con los dedos. Cada tarea se
 prueba en el móvil antes de seguir.
 
-- [ ] Controlador de personaje en tercera persona
-- [ ] Joystick virtual flotante en la mitad izquierda de la pantalla
+- [x] Controlador de personaje en tercera persona
+- [x] Joystick virtual flotante en la mitad izquierda de la pantalla
 - [ ] Cámara controlada arrastrando en la mitad derecha, con pellizco para zoom
+      *(hecho el arrastre; falta el pellizco)*
 - [ ] Esquiva (Embestida) con recarga
+      *(existe `DashAbility` con recarga, pero como ranura de la barra y con daño;
+      falta sacarla a un botón de esquiva propio)*
 - [ ] Sistema de habilidades por datos: cada habilidad es un ScriptableObject con
       nombre, daño, coste de recurso, recarga, alcance y tipo de apuntado
+      *(hecho `AbilityDefinition` con nombre, recarga, alcance y apuntado;
+      falta coste de recurso y el daño en la base)*
 - [ ] Recurso Rabia 0–100: sube al golpear y al recibir daño, baja fuera de combate
 - [ ] Barra de combate: ataque básico + 6 habilidades + definitiva + esquiva
 - [ ] Apuntado híbrido: toque rápido al objetivo, mantener y arrastrar para apuntar
+      *(hecho el gesto en `AbilityButton`; el toque rápido va al más cercano porque
+      aún no hay objetivo seleccionado)*
 - [ ] Selección de objetivo: tocar al enemigo y botón de cambio
 - [ ] Enemigo básico con vida, IA simple y ataque telegrafiado con zona en el suelo
 - [ ] Rendimientos decrecientes en aturdimientos
@@ -30,6 +37,7 @@ prueba en el móvil antes de seguir.
 - [ ] Las 10 habilidades del Devastador con sus recargas
 - [ ] Definitivas: Furia y Golpe del Conquistador (carga de 1 s, se puede fallar)
 - [ ] Muñeco de entrenamiento con medidor de daño por segundo y desglose
+      *(hecho `TrainingDummy` con parpadeo, empujón y reaparición; falta el medidor)*
 
 ### Criterios para dar la fase por buena
 

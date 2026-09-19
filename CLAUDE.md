@@ -20,7 +20,8 @@ resulta divertido con los dedos en una pantalla de móvil?
 - El motor es **Unity (URP)**, el proyecto vive en `client/`, el código es C#.
 - Escribe **comentarios y nombres de sistemas en español**; los nombres de clases
   C# en inglés solo si es lo idiomático del motor.
-- **Un script por responsabilidad**, en carpetas claras dentro de `Assets/Scripts/`.
+- **Un script por responsabilidad**, en carpetas claras dentro de
+  `client/Assets/_Umbralis/Scripts/` (todo lo nuestro va bajo `_Umbralis/`).
 - Lo que no se pueda hacer desde código (escena, prefabs, importar assets) se
   explica al final de cada tarea como **pasos manuales en el editor de Unity**.
 - Nada de arte: primitivas (cápsulas, cubos) y materiales planos.
