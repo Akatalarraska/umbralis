@@ -8,7 +8,6 @@ namespace Umbralis.Abilities
     public sealed class ProjectileAbility : AbilityDefinition
     {
         [Header("Proyectil")]
-        [Min(0f)] public float damage = 30f;
         [Min(1f)] public float speed = 18f;
         [Min(0.05f)] public float radius = 0.25f;
 
@@ -22,7 +21,7 @@ namespace Umbralis.Abilities
             if (fxMaterial != null) go.GetComponent<Renderer>().sharedMaterial = fxMaterial;
 
             go.AddComponent<Projectile>().Launch(
-                context.Caster.transform, context.Caster.Team, context.Direction, speed, range, damage, radius);
+                context.Caster.Health, context.Direction, speed, range, damage, radius);
         }
     }
 }

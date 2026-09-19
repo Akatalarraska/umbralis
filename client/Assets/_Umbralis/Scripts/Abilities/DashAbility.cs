@@ -3,15 +3,15 @@ using UnityEngine;
 namespace Umbralis.Abilities
 {
     /// <summary>
-    /// Embestida: el personaje se desplaza rápidamente en la dirección elegida
+    /// Carga: el personaje se desplaza rápidamente en la dirección elegida
     /// (hasta <see cref="AbilityDefinition.range"/> metros) y daña a los enemigos
-    /// que encuentra por el camino.
+    /// que encuentra por el camino. Tipo genérico (Salto, Carga con escudo...);
+    /// la esquiva no usa esto, tiene su propio <c>PlayerDodge</c>.
     /// </summary>
-    [CreateAssetMenu(menuName = "Umbralis/Habilidades/Embestida (dash)", fileName = "Dash")]
+    [CreateAssetMenu(menuName = "Umbralis/Habilidades/Carga (dash)", fileName = "Dash")]
     public sealed class DashAbility : AbilityDefinition
     {
-        [Header("Embestida")]
-        [Min(0f)] public float damage = 15f;
+        [Header("Carga")]
         [Min(0.05f)] public float duration = 0.2f;
         [Tooltip("Anchura del pasillo que golpea (radio).")]
         [Min(0.1f)] public float hitRadius = 0.8f;
@@ -35,7 +35,7 @@ namespace Umbralis.Abilities
                     to.y = 0f;
                     if (to.sqrMagnitude > hitRadius * hitRadius) continue;
                     alreadyHit.Add(h);
-                    h.TakeDamage(damage, context.Direction);
+                    h.TakeDamage(damage, context.Direction, context.Caster.Health);
                 }
             }
 

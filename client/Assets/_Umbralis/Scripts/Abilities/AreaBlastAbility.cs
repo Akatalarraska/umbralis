@@ -7,7 +7,6 @@ namespace Umbralis.Abilities
     public sealed class AreaBlastAbility : AbilityDefinition
     {
         [Header("Estallido")]
-        [Min(0f)] public float damage = 40f;
         [Min(0.25f)] public float radius = 2.5f;
 
         public override float AimRadius => radius;
@@ -20,7 +19,7 @@ namespace Umbralis.Abilities
             point.y = context.Caster.transform.position.y;
 
             // knockbackDirection = zero → cada objetivo sale despedido desde el centro.
-            DamageInSphere(point, radius, damage, context.Caster.Team, Vector3.zero);
+            DamageInSphere(point, radius, damage, context.Caster.Health, Vector3.zero);
 
             SpawnFx(PrimitiveType.Sphere, point + Vector3.up * 0.5f, Quaternion.identity, Vector3.one * (radius * 2f), 0.15f);
         }

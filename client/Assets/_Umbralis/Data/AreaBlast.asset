@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.AreaBlastAbility
   displayName: Estallido
   buttonColor: {r: 0.75, g: 0.4, b: 1, a: 1}
+  damage: 40
   cooldown: 6
   range: 8
   aimMode: 1
+  resourceCost: 40
+  resourceGain: 0
   faceLockDuration: 0.25
   fxMaterial: {fileID: 2100000, guid: a23a2a28d7331374690355f010200950, type: 2}
-  damage: 40
   radius: 2.5

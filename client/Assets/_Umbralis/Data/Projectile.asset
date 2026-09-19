@@ -14,11 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.ProjectileAbility
   displayName: Disparo
   buttonColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  damage: 30
   cooldown: 2
   range: 14
   aimMode: 0
+  resourceCost: 0
+  resourceGain: 5
   faceLockDuration: 0.25
   fxMaterial: {fileID: 2100000, guid: f8180499151fb8047861467ff954f0c5, type: 2}
-  damage: 30
   speed: 18
   radius: 0.25

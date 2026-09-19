@@ -67,8 +67,13 @@ namespace Umbralis.TouchControls
 
         private void Update()
         {
-            if (cooldownOverlay != null && caster != null)
+            if (caster == null) return;
+            if (cooldownOverlay != null)
                 cooldownOverlay.fillAmount = caster.CooldownFraction(slot);
+
+            // Sin recurso suficiente: el botón se apaga (mientras no se esté apuntando con él).
+            if (background != null && !aiming)
+                background.color = caster.CanAfford(slot) ? baseColor : baseColor * new Color(0.45f, 0.45f, 0.45f, 1f);
         }
 
         private void OnDisable() => EndGesture();
@@ -76,7 +81,7 @@ namespace Umbralis.TouchControls
         public void OnPointerDown(PointerEventData eventData)
         {
             if (activePointerId != NoPointer || caster == null || Ability == null) return;
-            if (!caster.IsReady(slot)) return; // en enfriamiento: el toque se ignora
+            if (!caster.IsReady(slot) || !caster.CanAfford(slot)) return; // en enfriamiento o sin recurso: el toque se ignora
 
             activePointerId = eventData.pointerId;
             pressPosition = eventData.position;

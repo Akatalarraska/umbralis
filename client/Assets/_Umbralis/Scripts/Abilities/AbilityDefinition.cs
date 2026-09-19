@@ -41,9 +41,17 @@ namespace Umbralis.Abilities
         public Color buttonColor = Color.white;
 
         [Header("Lanzamiento")]
+        [Tooltip("Daño base. Cada tipo decide cómo lo aplica (cono, proyectil, área...).")]
+        [Min(0f)] public float damage = 20f;
         [Min(0f)] public float cooldown = 1f;
         [Min(0.5f)] public float range = 5f;
         public AimMode aimMode = AimMode.Direction;
+
+        [Header("Recurso")]
+        [Tooltip("Recurso que consume al lanzarse. Si no hay suficiente, no se lanza.")]
+        [Min(0f)] public float resourceCost = 0f;
+        [Tooltip("Recurso que genera al lanzarse (las habilidades básicas generan, las fuertes gastan).")]
+        [Min(0f)] public float resourceGain = 0f;
 
         [Tooltip("Segundos que el personaje se queda mirando hacia donde lanzó.")]
         [Min(0f)] public float faceLockDuration = 0.25f;
@@ -74,15 +82,15 @@ namespace Umbralis.Abilities
             return fx;
         }
 
-        /// <summary>Aplica daño a todos los Health enemigos dentro de una esfera.</summary>
-        protected static int DamageInSphere(Vector3 center, float radius, float damage, Team myTeam, Vector3 knockbackDirection, float coneDegrees = 360f, Vector3 coneForward = default)
+        /// <summary>Aplica daño, en nombre de <paramref name="attacker"/>, a todos los Health enemigos dentro de una esfera.</summary>
+        protected static int DamageInSphere(Vector3 center, float radius, float damage, Health attacker, Vector3 knockbackDirection, float coneDegrees = 360f, Vector3 coneForward = default)
         {
             int hits = 0;
             float halfCone = coneDegrees * 0.5f;
             // Copia porque TakeDamage puede disparar eventos que modifiquen la lista.
             foreach (Health h in Health.All.ToArray())
             {
-                if (h.Team == myTeam || !h.IsAlive) continue;
+                if (h.Team == attacker.Team || !h.IsAlive) continue;
 
                 Vector3 to = h.transform.position - center;
                 to.y = 0f;
@@ -90,7 +98,7 @@ namespace Umbralis.Abilities
                 if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
 
                 Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
-                h.TakeDamage(damage, push);
+                h.TakeDamage(damage, push, attacker);
                 hits++;
             }
             return hits;

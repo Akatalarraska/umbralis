@@ -27,6 +27,13 @@ namespace Umbralis.Combat
         public event Action Died;
         public event Action Revived;
 
+        /// <summary>
+        /// Cualquier daño de la escena: (atacante, víctima, cantidad). El atacante
+        /// puede ser null (daño ambiental). Lo usan los recursos de clase, los
+        /// números flotantes y, más adelante, el medidor de daño.
+        /// </summary>
+        public static event Action<Health, Health, float> AnyDamaged;
+
         /// <summary>Todos los Health activos en la escena.</summary>
         public static readonly List<Health> All = new List<Health>();
 
@@ -34,13 +41,15 @@ namespace Umbralis.Combat
         private void OnEnable() => All.Add(this);
         private void OnDisable() => All.Remove(this);
 
-        public void TakeDamage(float amount, Vector3 hitDirection)
+        /// <param name="attacker">Quién hace el daño; null si no hay nadie (ambiental).</param>
+        public void TakeDamage(float amount, Vector3 hitDirection, Health attacker = null)
         {
             if (!IsAlive || amount <= 0f) return;
 
             Current = Mathf.Max(0f, Current - amount);
             hitDirection.y = 0f;
             Damaged?.Invoke(amount, hitDirection.sqrMagnitude > 0.0001f ? hitDirection.normalized : Vector3.zero);
+            AnyDamaged?.Invoke(attacker, this, amount);
 
             if (!IsAlive) Died?.Invoke();
         }

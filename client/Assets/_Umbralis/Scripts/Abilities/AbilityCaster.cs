@@ -7,28 +7,41 @@ namespace Umbralis.Abilities
     /// <summary>
     /// Ranuras de habilidades del personaje y sus enfriamientos. Los botones del
     /// HUD le piden lanzar una ranura con una dirección/punto ya decididos (o sin
-    /// nada, y entonces auto-apunta al enemigo más cercano).
+    /// nada, y entonces auto-apunta al enemigo más cercano). Si el personaje
+    /// tiene <see cref="ClassResource"/>, cada lanzamiento paga su coste y
+    /// genera lo que diga la habilidad.
+    ///
+    /// Orden de ranuras: 0 = ataque básico, 1..6 = habilidades, 7 = definitiva.
     /// </summary>
     [RequireComponent(typeof(PlayerMovement), typeof(Health))]
     public sealed class AbilityCaster : MonoBehaviour
     {
-        [SerializeField] private AbilityDefinition[] slots = new AbilityDefinition[4];
+        public const int BasicSlot = 0;
+        public const int FirstAbilitySlot = 1;
+        public const int AbilitySlotCount = 6;
+        public const int UltimateSlot = 7;
+        public const int TotalSlots = 8;
+
+        [SerializeField] private AbilityDefinition[] slots = new AbilityDefinition[TotalSlots];
 
         [Tooltip("Altura desde los pies a la que nacen proyectiles y efectos.")]
         [SerializeField] private float originHeight = 1.1f;
 
         public PlayerMovement Movement { get; private set; }
-        public Team Team => health.Team;
+        public Health Health { get; private set; }
+        /// <summary>Recurso de clase; null si el personaje no tiene (entonces todo es gratis).</summary>
+        public ClassResource Resource { get; private set; }
+        public Team Team => Health.Team;
         public int SlotCount => slots.Length;
         public Vector3 Origin => transform.position + Vector3.up * originHeight;
 
-        private Health health;
         private float[] cooldownEnds;
 
         private void Awake()
         {
             Movement = GetComponent<PlayerMovement>();
-            health = GetComponent<Health>();
+            Health = GetComponent<Health>();
+            Resource = GetComponent<ClassResource>();
             cooldownEnds = new float[slots.Length];
         }
 
@@ -46,9 +59,17 @@ namespace Umbralis.Abilities
             return remaining <= 0f ? 0f : Mathf.Clamp01(remaining / ability.cooldown);
         }
 
+        /// <summary>Fuera de enfriamiento (no mira el recurso).</summary>
         public bool IsReady(int slot)
         {
             return GetAbility(slot) != null && Time.time >= cooldownEnds[slot];
+        }
+
+        /// <summary>Hay recurso suficiente para pagarla.</summary>
+        public bool CanAfford(int slot)
+        {
+            AbilityDefinition ability = GetAbility(slot);
+            return ability != null && (Resource == null || Resource.CanSpend(ability.resourceCost));
         }
 
         /// <summary>Lanzamiento rápido (toque corto): apunta solo al enemigo más cercano.</summary>
@@ -75,13 +96,18 @@ namespace Umbralis.Abilities
         /// <summary>Lanza con una dirección (horizontal) y un punto ya elegidos por el jugador.</summary>
         public bool TryCast(int slot, Vector3 direction, Vector3 point)
         {
-            if (!IsReady(slot)) return false;
+            if (!IsReady(slot) || !CanAfford(slot)) return false;
             AbilityDefinition ability = slots[slot];
 
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) direction = transform.forward;
             direction.Normalize();
 
+            if (Resource != null)
+            {
+                Resource.TrySpend(ability.resourceCost);
+                Resource.Gain(ability.resourceGain);
+            }
             cooldownEnds[slot] = Time.time + ability.cooldown;
             Movement.LockFacing(direction, ability.faceLockDuration);
 

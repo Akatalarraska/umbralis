@@ -7,13 +7,12 @@ namespace Umbralis.Abilities
     public sealed class MeleeAbility : AbilityDefinition
     {
         [Header("Golpe")]
-        [Min(0f)] public float damage = 20f;
         [Range(10f, 360f)] public float coneDegrees = 100f;
 
         public override void Execute(in AbilityContext context)
         {
             Vector3 feet = context.Caster.transform.position;
-            DamageInSphere(feet, range, damage, context.Caster.Team, context.Direction, coneDegrees, context.Direction);
+            DamageInSphere(feet, range, damage, context.Caster.Health, context.Direction, coneDegrees, context.Direction);
 
             // Tajo: una placa fina delante del personaje durante un instante.
             Vector3 pos = context.Origin + context.Direction * (range * 0.5f);

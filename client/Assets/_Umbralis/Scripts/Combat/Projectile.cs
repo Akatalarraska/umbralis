@@ -9,18 +9,16 @@ namespace Umbralis.Combat
     /// </summary>
     public sealed class Projectile : MonoBehaviour
     {
-        private Team ownerTeam;
-        private Transform owner;
+        private Health owner;
         private Vector3 direction;
         private float speed;
         private float damage;
         private float remainingDistance;
         private float radius;
 
-        public void Launch(Transform owner, Team ownerTeam, Vector3 direction, float speed, float range, float damage, float radius)
+        public void Launch(Health owner, Vector3 direction, float speed, float range, float damage, float radius)
         {
             this.owner = owner;
-            this.ownerTeam = ownerTeam;
             this.direction = direction.normalized;
             this.speed = speed;
             this.damage = damage;
@@ -35,11 +33,11 @@ namespace Umbralis.Combat
             remainingDistance -= step;
 
             if (Physics.SphereCast(transform.position, radius, direction, out RaycastHit hit, step, ~0, QueryTriggerInteraction.Ignore)
-                && (owner == null || !hit.transform.IsChildOf(owner)))
+                && (owner == null || !hit.transform.IsChildOf(owner.transform)))
             {
                 Health health = hit.collider.GetComponentInParent<Health>();
-                if (health != null && health.Team != ownerTeam)
-                    health.TakeDamage(damage, direction);
+                if (health != null && (owner == null || health.Team != owner.Team))
+                    health.TakeDamage(damage, direction, owner);
 
                 Destroy(gameObject);
                 return;

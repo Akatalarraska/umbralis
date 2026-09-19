@@ -14,11 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.DashAbility
   displayName: Carga
   buttonColor: {r: 0.3, g: 0.85, b: 1, a: 1}
+  damage: 15
   cooldown: 4
   range: 5
   aimMode: 0
+  resourceCost: 20
+  resourceGain: 0
   faceLockDuration: 0.25
   fxMaterial: {fileID: 2100000, guid: f6720173871ee504490967ca3c27fecf, type: 2}
-  damage: 15
   duration: 0.2
   hitRadius: 0.8

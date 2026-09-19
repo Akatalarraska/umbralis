@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Umbralis.Abilities.MeleeAbility
   displayName: Golpe
   buttonColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  damage: 20
   cooldown: 0.5
   range: 2.5
   aimMode: 0
+  resourceCost: 0
+  resourceGain: 10
   faceLockDuration: 0.25
   fxMaterial: {fileID: 2100000, guid: a846909b876e3a84f8b717fd550a1b95, type: 2}
-  damage: 20
   coneDegrees: 100

@@ -9,6 +9,7 @@ using UnityEngine.UI;
 using Umbralis.Abilities;
 using Umbralis.Combat;
 using Umbralis.Core;
+using Umbralis.HUD;
 using Umbralis.Player;
 using Umbralis.TouchControls;
 #if ENABLE_INPUT_SYSTEM
@@ -60,6 +61,7 @@ namespace Umbralis.EditorTools
             AimIndicator aimIndicator = CreateAimIndicator();
             CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
             CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), player.GetComponent<PlayerDodge>(), aimIndicator);
+            CreateStatusHud(hudRoot, player.GetComponent<Health>(), player.GetComponent<ClassResource>());
             CreateEventSystem();
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
 
@@ -224,6 +226,17 @@ namespace Umbralis.EditorTools
             SetEnum(health, "team", (int)Team.Player);
             SetFloat(health, "maxHealth", 200f);
 
+            // Rabia del Conquistador: empieza a 0, sube al golpear y al recibir
+            // daño, baja poco a poco fuera de combate.
+            ClassResource rage = root.AddComponent<ClassResource>();
+            SetString(rage, "displayName", "Rabia");
+            SetFloat(rage, "max", 100f);
+            SetFloat(rage, "startValue", 0f);
+            SetFloat(rage, "gainPerHitDealt", 5f);
+            SetFloat(rage, "gainPerDamageTaken", 0.1f);
+            SetFloat(rage, "combatTimeout", 5f);
+            SetFloat(rage, "outOfCombatChangePerSecond", -8f);
+
             AbilityCaster caster = root.AddComponent<AbilityCaster>();
             SetArray(caster, "slots", abilities);
 
@@ -265,6 +278,8 @@ namespace Umbralis.EditorTools
             melee.range = 2.5f;
             melee.aimMode = AimMode.Direction;
             melee.damage = 20f;
+            melee.resourceCost = 0f;
+            melee.resourceGain = 10f; // el básico genera Rabia
             melee.coneDegrees = 100f;
             melee.fxMaterial = CreateMaterial("FxMelee", new Color(1f, 1f, 0.8f));
 
@@ -275,6 +290,8 @@ namespace Umbralis.EditorTools
             projectile.range = 14f;
             projectile.aimMode = AimMode.Direction;
             projectile.damage = 30f;
+            projectile.resourceCost = 0f;
+            projectile.resourceGain = 5f;
             projectile.speed = 18f;
             projectile.fxMaterial = CreateMaterial("FxProjectile", new Color(1f, 0.5f, 0.1f));
 
@@ -287,6 +304,8 @@ namespace Umbralis.EditorTools
             dash.range = 5f;
             dash.aimMode = AimMode.Direction;
             dash.damage = 15f;
+            dash.resourceCost = 20f;
+            dash.resourceGain = 0f;
             dash.duration = 0.2f;
             dash.fxMaterial = CreateMaterial("FxDash", new Color(0.5f, 0.9f, 1f));
 
@@ -297,6 +316,8 @@ namespace Umbralis.EditorTools
             blast.range = 8f;
             blast.aimMode = AimMode.Point;
             blast.damage = 40f;
+            blast.resourceCost = 40f; // la fuerte gasta Rabia
+            blast.resourceGain = 0f;
             blast.radius = 2.5f;
             blast.fxMaterial = CreateMaterial("FxBlast", new Color(0.7f, 0.3f, 1f));
 
@@ -528,6 +549,76 @@ namespace Umbralis.EditorTools
             return go;
         }
 
+        /// <summary>Vida y recurso del jugador, arriba a la izquierda.</summary>
+        private static void CreateStatusHud(Transform hudRoot, Health health, ClassResource resource)
+        {
+            var root = new GameObject("PlayerStatus", typeof(RectTransform));
+            root.transform.SetParent(hudRoot, false);
+            var rt = root.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f); // esquina superior izquierda
+            rt.anchoredPosition = new Vector2(40f, -40f);
+            rt.sizeDelta = Vector2.zero;
+
+            HudBar healthBar = CreateHudBar("HealthBar", root.transform, new Vector2(0f, 0f), new Vector2(420f, 44f), new Color(0.2f, 0.9f, 0.3f));
+            HudBar resourceBar = CreateHudBar("ResourceBar", root.transform, new Vector2(0f, -56f), new Vector2(420f, 36f), new Color(0.95f, 0.3f, 0.2f));
+
+            PlayerStatusHud hud = root.AddComponent<PlayerStatusHud>();
+            SetReference(hud, "health", health);
+            SetReference(hud, "resource", resource);
+            SetReference(hud, "healthBar", healthBar);
+            SetReference(hud, "resourceBar", resourceBar);
+        }
+
+        private static HudBar CreateHudBar(string name, Transform parent, Vector2 position, Vector2 size, Color fillColor)
+        {
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = position;
+            rt.sizeDelta = size;
+            var background = go.GetComponent<Image>();
+            background.color = new Color(0f, 0f, 0f, 0.6f);
+            background.raycastTarget = false;
+
+            var fillGo = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fillGo.transform.SetParent(go.transform, false);
+            var fillRt = fillGo.GetComponent<RectTransform>();
+            fillRt.anchorMin = Vector2.zero;
+            fillRt.anchorMax = Vector2.one;
+            fillRt.offsetMin = new Vector2(3f, 3f);
+            fillRt.offsetMax = new Vector2(-3f, -3f);
+            var fill = fillGo.GetComponent<Image>();
+            fill.color = fillColor;
+            fill.raycastTarget = false;
+            // Image.Filled necesita un sprite; el de UI blanco vale.
+            fill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
+            fill.fillOrigin = (int)Image.OriginHorizontal.Left;
+            fill.fillAmount = 1f;
+
+            var labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            labelGo.transform.SetParent(go.transform, false);
+            var labelRt = labelGo.GetComponent<RectTransform>();
+            labelRt.anchorMin = Vector2.zero;
+            labelRt.anchorMax = Vector2.one;
+            labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
+            var label = labelGo.GetComponent<Text>();
+            label.font = font;
+            label.fontSize = Mathf.RoundToInt(size.y * 0.6f);
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = Color.white;
+            label.raycastTarget = false;
+
+            HudBar bar = go.AddComponent<HudBar>();
+            SetReference(bar, "fill", fill);
+            SetReference(bar, "label", label);
+            return bar;
+        }
+
         /// <summary>Panel invisible que recibe toques en la porción de pantalla indicada.</summary>
         private static GameObject CreateZone(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax)
         {
@@ -618,6 +709,11 @@ namespace Umbralis.EditorTools
         private static void SetReference(Object target, string fieldName, Object value)
         {
             SetProperty(target, fieldName, p => p.objectReferenceValue = value);
+        }
+
+        private static void SetString(Object target, string fieldName, string value)
+        {
+            SetProperty(target, fieldName, p => p.stringValue = value);
         }
 
         private static void SetInt(Object target, string fieldName, int value)
