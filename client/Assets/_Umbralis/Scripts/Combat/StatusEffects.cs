@@ -48,6 +48,7 @@ namespace Umbralis.Combat
         private sealed class Bleed
         {
             public Health attacker;
+            public string source;
             public float damagePerTick, tickInterval, nextTick, endsAt;
         }
 
@@ -70,8 +71,8 @@ namespace Umbralis.Combat
                 if (Time.time >= b.endsAt || !health.IsAlive) { bleeds.RemoveAt(i); continue; }
                 if (Time.time < b.nextTick) continue;
                 b.nextTick += b.tickInterval;
-                if (b.attacker != null) b.attacker.DealDamage(health, b.damagePerTick, Vector3.zero);
-                else health.TakeDamage(b.damagePerTick, Vector3.zero);
+                if (b.attacker != null) b.attacker.DealDamage(health, b.damagePerTick, Vector3.zero, b.source);
+                else health.TakeDamage(b.damagePerTick, Vector3.zero, null, b.source);
             }
         }
 
@@ -95,10 +96,11 @@ namespace Umbralis.Combat
         }
 
         /// <summary>Sangrado de <paramref name="attacker"/>: reemplaza al suyo anterior si lo había.</summary>
-        public void ApplyBleed(Health attacker, float damagePerTick, float tickInterval, float duration)
+        public void ApplyBleed(Health attacker, float damagePerTick, float tickInterval, float duration, string source = "Sangrado")
         {
             Bleed existing = bleeds.Find(b => b.attacker == attacker);
             if (existing == null) { existing = new Bleed { attacker = attacker }; bleeds.Add(existing); }
+            existing.source = source;
             existing.damagePerTick = damagePerTick;
             existing.tickInterval = Mathf.Max(tickInterval, 0.05f);
             existing.nextTick = Time.time + existing.tickInterval;

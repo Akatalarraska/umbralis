@@ -21,7 +21,7 @@ namespace Umbralis.Abilities
             if (fxMaterial != null) go.GetComponent<Renderer>().sharedMaterial = fxMaterial;
 
             go.AddComponent<Projectile>().Launch(
-                context.Caster.Health, context.Direction, speed, range, damage, radius);
+                context.Caster.Health, context.Direction, speed, range, damage, radius, displayName);
         }
     }
 }

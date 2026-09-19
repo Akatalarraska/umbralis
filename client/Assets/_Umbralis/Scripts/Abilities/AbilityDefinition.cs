@@ -77,7 +77,7 @@ namespace Umbralis.Abilities
         /// Aplica daño a los enemigos de un cono/esfera y además ejecuta
         /// <paramref name="onHit"/> sobre cada uno (para sangrados, aturdimientos...).
         /// </summary>
-        protected static int DamageInSphere(Vector3 center, float radius, float damage, Health attacker, Vector3 knockbackDirection,
+        protected int DamageInSphere(Vector3 center, float radius, float damage, Health attacker, Vector3 knockbackDirection,
             float coneDegrees, Vector3 coneForward, System.Action<Health> onHit)
         {
             int hits = 0;
@@ -91,7 +91,7 @@ namespace Umbralis.Abilities
                 if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
 
                 Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
-                attacker.DealDamage(h, damage, push);
+                attacker.DealDamage(h, damage, push, displayName);
                 onHit?.Invoke(h);
                 hits++;
             }
@@ -116,7 +116,7 @@ namespace Umbralis.Abilities
         }
 
         /// <summary>Aplica daño, en nombre de <paramref name="attacker"/>, a todos los Health enemigos dentro de una esfera.</summary>
-        protected static int DamageInSphere(Vector3 center, float radius, float damage, Health attacker, Vector3 knockbackDirection, float coneDegrees = 360f, Vector3 coneForward = default)
+        protected int DamageInSphere(Vector3 center, float radius, float damage, Health attacker, Vector3 knockbackDirection, float coneDegrees = 360f, Vector3 coneForward = default)
         {
             int hits = 0;
             float halfCone = coneDegrees * 0.5f;
@@ -131,7 +131,7 @@ namespace Umbralis.Abilities
                 if (coneDegrees < 360f && Vector3.Angle(coneForward, to) > halfCone) continue;
 
                 Vector3 push = knockbackDirection == Vector3.zero ? to.normalized : knockbackDirection;
-                attacker.DealDamage(h, damage, push);
+                attacker.DealDamage(h, damage, push, displayName);
                 hits++;
             }
             return hits;

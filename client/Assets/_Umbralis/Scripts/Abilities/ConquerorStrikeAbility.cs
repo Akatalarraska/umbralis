@@ -50,7 +50,7 @@ namespace Umbralis.Abilities
                     if (!inReach) { Fail(caster); return; }
 
                     caster.Movement.LockFacing(now, 0.3f);
-                    caster.Health.DealDamage(target, finalDamage, now.normalized);
+                    caster.Health.DealDamage(target, finalDamage, now.normalized, displayName);
                     SpawnFx(PrimitiveType.Sphere, target.transform.position + Vector3.up, Quaternion.identity, Vector3.one * 2.5f, 0.2f);
                 },
                 onInterrupt: () => Fail(caster));

@@ -17,6 +17,7 @@ namespace Umbralis.Player
         [Header("Referencias")]
         [SerializeField] private Transform target;
         [SerializeField] private CameraLookZone lookZone;
+        [SerializeField] private PinchZoom pinchZoom;
 
         [Header("Órbita")]
         [Tooltip("Punto alrededor del que orbita la cámara, relativo al target (altura de los hombros).")]
@@ -24,6 +25,11 @@ namespace Umbralis.Player
 
         [Tooltip("Distancia deseada entre el pivote y la cámara.")]
         [SerializeField, Min(0.5f)] private float distance = 6f;
+
+        [Header("Zoom (pellizco)")]
+        [SerializeField] private Vector2 distanceLimits = new Vector2(2.5f, 12f);
+        [Tooltip("Metros que cambia la distancia al separar los dedos un ancho de pantalla.")]
+        [SerializeField, Min(0.1f)] private float metersPerScreenWidth = 12f;
 
         [Tooltip("Grados que gira la cámara al arrastrar el dedo de un lado a otro de la pantalla.")]
         [SerializeField, Min(1f)] private float degreesPerScreenWidth = 240f;
@@ -73,6 +79,13 @@ namespace Umbralis.Player
         private void ApplyLookInput()
         {
             if (lookZone == null) return;
+
+            if (pinchZoom != null)
+            {
+                float pinch = pinchZoom.ConsumeDelta();
+                if (pinch != 0f) // separar los dedos = acercar la cámara
+                    distance = Mathf.Clamp(distance - pinch / Screen.width * metersPerScreenWidth, distanceLimits.x, distanceLimits.y);
+            }
 
             Vector2 delta = lookZone.ConsumeDelta();
             if (delta == Vector2.zero) return;

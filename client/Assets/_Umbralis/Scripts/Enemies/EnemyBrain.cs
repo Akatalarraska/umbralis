@@ -163,7 +163,7 @@ namespace Umbralis.Enemies
                 Vector3 to = h.transform.position - hitCenter;
                 to.y = 0f;
                 if (to.sqrMagnitude > hitRadius * hitRadius) continue;
-                health.DealDamage(h, damage, transform.forward);
+                health.DealDamage(h, damage, transform.forward, "Golpe de Acechador");
             }
 
             stateTimer = recoverDuration;

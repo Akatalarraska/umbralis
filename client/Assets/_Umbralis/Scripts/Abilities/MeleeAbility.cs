@@ -65,11 +65,11 @@ namespace Umbralis.Abilities
             {
                 float amount = damage;
                 if (executeThreshold > 0f && victim.Fraction <= executeThreshold) amount *= executeMultiplier;
-                attacker.DealDamage(victim, amount, direction);
+                attacker.DealDamage(victim, amount, direction, displayName);
 
                 StatusEffects status = victim.GetComponent<StatusEffects>();
                 if (status == null) return;
-                if (bleedDamagePerTick > 0f && bleedDuration > 0f) status.ApplyBleed(attacker, bleedDamagePerTick, bleedInterval, bleedDuration);
+                if (bleedDamagePerTick > 0f && bleedDuration > 0f) status.ApplyBleed(attacker, bleedDamagePerTick, bleedInterval, bleedDuration, displayName + " (sangrado)");
                 if (stunDuration > 0f) status.ApplyStun(stunDuration);
                 if (interrupts) status.Interrupt();
             });

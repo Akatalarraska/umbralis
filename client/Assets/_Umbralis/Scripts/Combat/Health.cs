@@ -28,11 +28,12 @@ namespace Umbralis.Combat
         public event Action Revived;
 
         /// <summary>
-        /// Cualquier daño de la escena: (atacante, víctima, cantidad). El atacante
-        /// puede ser null (daño ambiental). Lo usan los recursos de clase, los
-        /// números flotantes y, más adelante, el medidor de daño.
+        /// Cualquier daño de la escena: (atacante, víctima, cantidad, origen). El
+        /// atacante puede ser null (daño ambiental); el origen es el nombre de la
+        /// habilidad. Lo usan los recursos de clase, los números flotantes y el
+        /// medidor de daño.
         /// </summary>
-        public static event Action<Health, Health, float> AnyDamaged;
+        public static event Action<Health, Health, float, string> AnyDamaged;
 
         /// <summary>Todos los Health activos en la escena.</summary>
         public static readonly List<Health> All = new List<Health>();
@@ -42,14 +43,15 @@ namespace Umbralis.Combat
         private void OnDisable() => All.Remove(this);
 
         /// <param name="attacker">Quién hace el daño; null si no hay nadie (ambiental).</param>
-        public void TakeDamage(float amount, Vector3 hitDirection, Health attacker = null)
+        /// <param name="source">Nombre de la habilidad o causa, para el medidor.</param>
+        public void TakeDamage(float amount, Vector3 hitDirection, Health attacker = null, string source = null)
         {
             if (!IsAlive || amount <= 0f) return;
 
             Current = Mathf.Max(0f, Current - amount);
             hitDirection.y = 0f;
             Damaged?.Invoke(amount, hitDirection.sqrMagnitude > 0.0001f ? hitDirection.normalized : Vector3.zero);
-            AnyDamaged?.Invoke(attacker, this, amount);
+            AnyDamaged?.Invoke(attacker, this, amount, source);
 
             if (!IsAlive) Died?.Invoke();
         }
@@ -71,7 +73,7 @@ namespace Umbralis.Combat
         /// aplicando sus potenciaciones (multiplicador de daño, robo de vida).
         /// Todo el daño de habilidades pasa por aquí. Devuelve el daño aplicado.
         /// </summary>
-        public float DealDamage(Health victim, float amount, Vector3 hitDirection)
+        public float DealDamage(Health victim, float amount, Vector3 hitDirection, string source = null)
         {
             if (victim == null || !victim.IsAlive || amount <= 0f) return 0f;
 
@@ -80,7 +82,7 @@ namespace Umbralis.Combat
             float lifesteal = statusEffects != null ? statusEffects.Lifesteal : 0f;
 
             float dealt = Mathf.Min(amount * multiplier, victim.Current);
-            victim.TakeDamage(amount * multiplier, hitDirection, this);
+            victim.TakeDamage(amount * multiplier, hitDirection, this, source);
             if (lifesteal > 0f) Heal(dealt * lifesteal);
             return dealt;
         }

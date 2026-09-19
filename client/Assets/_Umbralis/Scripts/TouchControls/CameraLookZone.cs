@@ -21,6 +21,9 @@ namespace Umbralis.TouchControls
         private const int NoPointer = int.MinValue;
         private int activePointerId = NoPointer;
         private Vector2 accumulatedDelta; // en píxeles de pantalla
+        private PinchZoom pinch;          // opcional: con dos dedos no se gira
+
+        private void Awake() => pinch = GetComponent<PinchZoom>();
 
         /// <summary>
         /// Devuelve el desplazamiento acumulado desde la última llamada (en píxeles
@@ -48,6 +51,7 @@ namespace Umbralis.TouchControls
         public void OnDrag(PointerEventData eventData)
         {
             if (eventData.pointerId != activePointerId) return;
+            if (pinch != null && pinch.IsPinching) return;
             accumulatedDelta += eventData.delta;
         }
 

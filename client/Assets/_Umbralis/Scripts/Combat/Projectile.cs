@@ -15,10 +15,12 @@ namespace Umbralis.Combat
         private float damage;
         private float remainingDistance;
         private float radius;
+        private string source;
 
-        public void Launch(Health owner, Vector3 direction, float speed, float range, float damage, float radius)
+        public void Launch(Health owner, Vector3 direction, float speed, float range, float damage, float radius, string source = null)
         {
             this.owner = owner;
+            this.source = source;
             this.direction = direction.normalized;
             this.speed = speed;
             this.damage = damage;
@@ -36,8 +38,8 @@ namespace Umbralis.Combat
                 && (owner == null || !hit.transform.IsChildOf(owner.transform)))
             {
                 Health health = hit.collider.GetComponentInParent<Health>();
-                if (health != null && owner == null) health.TakeDamage(damage, direction);
-                else if (health != null && health.Team != owner.Team) owner.DealDamage(health, damage, direction);
+                if (health != null && owner == null) health.TakeDamage(damage, direction, null, source);
+                else if (health != null && health.Team != owner.Team) owner.DealDamage(health, damage, direction, source);
 
                 Destroy(gameObject);
                 return;

@@ -103,7 +103,7 @@ namespace Umbralis.Combat
             Gain(amount * gainPerDamageTaken);
         }
 
-        private void OnAnyDamaged(Health attacker, Health victim, float amount)
+        private void OnAnyDamaged(Health attacker, Health victim, float amount, string source)
         {
             if (attacker != health) return;
             MarkCombat();

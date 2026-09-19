@@ -22,7 +22,7 @@ namespace Umbralis.Combat
         private void OnEnable() => Health.AnyDamaged += OnDamaged;
         private void OnDisable() => Health.AnyDamaged -= OnDamaged;
 
-        private void OnDamaged(Health attacker, Health victim, float amount)
+        private void OnDamaged(Health attacker, Health victim, float amount, string source)
         {
             if (victim == null) return;
 

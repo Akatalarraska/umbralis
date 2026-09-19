@@ -16,8 +16,7 @@ prueba en el móvil antes de seguir.
 
 - [x] Controlador de personaje en tercera persona
 - [x] Joystick virtual flotante en la mitad izquierda de la pantalla
-- [ ] Cámara controlada arrastrando en la mitad derecha, con pellizco para zoom
-      *(hecho el arrastre; falta el pellizco)*
+- [x] Cámara controlada arrastrando en la mitad derecha, con pellizco para zoom
 - [x] Esquiva (Embestida) con recarga
 - [x] Sistema de habilidades por datos: cada habilidad es un ScriptableObject con
       nombre, daño, coste de recurso, recarga, alcance y tipo de apuntado
@@ -33,8 +32,7 @@ prueba en el móvil antes de seguir.
 - [x] Las 10 habilidades del Devastador con sus recargas
 - [x] Definitivas: Furia y Golpe del Conquistador (carga de 1 s, se puede fallar)
       *(Furia sin velocidad de ataque hasta que haya animaciones)*
-- [ ] Muñeco de entrenamiento con medidor de daño por segundo y desglose
-      *(hecho `TrainingDummy` con parpadeo, empujón y reaparición; falta el medidor)*
+- [x] Muñeco de entrenamiento con medidor de daño por segundo y desglose
 
 ### Criterios para dar la fase por buena
 

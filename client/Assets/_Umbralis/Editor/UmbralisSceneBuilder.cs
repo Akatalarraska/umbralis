@@ -68,6 +68,7 @@ namespace Umbralis.EditorTools
             CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
             CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), player.GetComponent<PlayerDodge>(), aimIndicator);
             CreateStatusHud(hudRoot, player.GetComponent<Health>(), player.GetComponent<ClassResource>());
+            CreateDamageMeterHud(hudRoot, player.GetComponent<DamageMeter>());
             CreateTargeting(hudRoot, player, hudRoot.GetComponentsInChildren<TapDetector>());
             CreateEventSystem();
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
@@ -80,6 +81,7 @@ namespace Umbralis.EditorTools
             ThirdPersonCamera orbit = camera.GetComponent<ThirdPersonCamera>();
             SetReference(orbit, "target", player.transform);
             SetReference(orbit, "lookZone", lookZone);
+            SetReference(orbit, "pinchZoom", lookZone.GetComponent<PinchZoom>());
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings();
@@ -245,6 +247,7 @@ namespace Umbralis.EditorTools
             SetFloat(rage, "outOfCombatChangePerSecond", -8f);
 
             root.AddComponent<TargetSelector>();
+            root.AddComponent<DamageMeter>();
             AddStatusEffects(root, 2.6f);
 
             AbilityCaster caster = root.AddComponent<AbilityCaster>();
@@ -660,6 +663,7 @@ namespace Umbralis.EditorTools
             // Mitad derecha: giro de cámara (y detector de toques).
             GameObject rightZone = CreateZone("LookZone", canvasGo.transform, new Vector2(0.5f, 0f), new Vector2(1f, 1f));
             rightZone.AddComponent<TapDetector>();
+            rightZone.AddComponent<PinchZoom>();
             lookZone = rightZone.AddComponent<CameraLookZone>();
         }
 
@@ -921,6 +925,53 @@ namespace Umbralis.EditorTools
             SetReference(hud, "selector", selector);
             SetReference(hud, "panel", panel);
             SetReference(hud, "healthBar", bar);
+            panel.SetActive(false);
+        }
+
+        /// <summary>Medidor de daño plegable bajo las barras de estado, con botón "DPS" y "Reiniciar".</summary>
+        private static void CreateDamageMeterHud(Transform hudRoot, DamageMeter meter)
+        {
+            var root = new GameObject("DamageMeterHud", typeof(RectTransform));
+            root.transform.SetParent(hudRoot, false);
+            var rt = root.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
+
+            Button toggle = CreateTextButton("ToggleMeter", root.transform, new Vector2(0f, 1f), new Vector2(480f, -40f), new Vector2(110f, 44f), "DPS");
+
+            var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(root.transform, false);
+            var panelRt = panel.GetComponent<RectTransform>();
+            panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0f, 1f);
+            panelRt.anchoredPosition = new Vector2(40f, -150f);
+            panelRt.sizeDelta = new Vector2(560f, 320f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color = new Color(0f, 0f, 0f, 0.6f);
+            panelImage.raycastTarget = false; // el joystick sigue funcionando debajo
+
+            Button reset = CreateTextButton("ResetMeter", panel.transform, new Vector2(1f, 1f), new Vector2(-10f, -10f), new Vector2(150f, 40f), "Reiniciar");
+
+            var textGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            textGo.transform.SetParent(panel.transform, false);
+            var textRt = textGo.GetComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(16f, 12f);
+            textRt.offsetMax = new Vector2(-16f, -12f);
+            var text = textGo.GetComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 24;
+            text.alignment = TextAnchor.UpperLeft;
+            text.color = Color.white;
+            text.raycastTarget = false;
+
+            DamageMeterHud hud = root.AddComponent<DamageMeterHud>();
+            SetReference(hud, "meter", meter);
+            SetReference(hud, "panel", panel);
+            SetReference(hud, "text", text);
+            SetReference(hud, "toggleButton", toggle);
+            SetReference(hud, "resetButton", reset);
             panel.SetActive(false);
         }
 
