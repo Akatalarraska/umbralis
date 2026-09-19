@@ -19,19 +19,16 @@ prueba en el móvil antes de seguir.
 - [ ] Cámara controlada arrastrando en la mitad derecha, con pellizco para zoom
       *(hecho el arrastre; falta el pellizco)*
 - [x] Esquiva (Embestida) con recarga
-- [ ] Sistema de habilidades por datos: cada habilidad es un ScriptableObject con
+- [x] Sistema de habilidades por datos: cada habilidad es un ScriptableObject con
       nombre, daño, coste de recurso, recarga, alcance y tipo de apuntado
-      *(hecho `AbilityDefinition` con nombre, recarga, alcance y apuntado;
-      falta coste de recurso y el daño en la base)*
-- [ ] Recurso Rabia 0–100: sube al golpear y al recibir daño, baja fuera de combate
-- [ ] Barra de combate: ataque básico + 6 habilidades + definitiva + esquiva
-- [ ] Apuntado híbrido: toque rápido al objetivo, mantener y arrastrar para apuntar
-      *(hecho el gesto en `AbilityButton`; el toque rápido va al más cercano porque
-      aún no hay objetivo seleccionado)*
-- [ ] Selección de objetivo: tocar al enemigo y botón de cambio
+- [x] Recurso Rabia 0–100: sube al golpear y al recibir daño, baja fuera de combate
+- [x] Barra de combate: ataque básico + 6 habilidades + definitiva + esquiva
+- [x] Apuntado híbrido: toque rápido al objetivo, mantener y arrastrar para apuntar
+- [x] Selección de objetivo: tocar al enemigo y botón de cambio
+      *(falta la prioridad automática configurable: ahora siempre "más cercano")*
 - [ ] Enemigo básico con vida, IA simple y ataque telegrafiado con zona en el suelo
 - [ ] Rendimientos decrecientes en aturdimientos
-- [ ] Números de daño flotantes y barras de vida sobre los personajes
+- [x] Números de daño flotantes y barras de vida sobre los personajes
 - [ ] Las 10 habilidades del Devastador con sus recargas
 - [ ] Definitivas: Furia y Golpe del Conquistador (carga de 1 s, se puede fallar)
 - [ ] Muñeco de entrenamiento con medidor de daño por segundo y desglose
