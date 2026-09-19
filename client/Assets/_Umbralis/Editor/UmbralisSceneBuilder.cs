@@ -36,7 +36,12 @@ namespace Umbralis.EditorTools
         public static void CreateCombatScene()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            BuildCombatScene();
+        }
 
+        /// <summary>Genera la escena sin preguntar nada (uso desde menú y desde batch mode).</summary>
+        public static void BuildCombatScene()
+        {
             EnsureFolder(ScenesFolder);
             EnsureFolder(MaterialsFolder);
 
@@ -74,14 +79,76 @@ namespace Umbralis.EditorTools
             // Orientación horizontal fija. GameBootstrap la refuerza en runtime.
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
 
+            // IL2CPP + ARM64: los móviles recientes ya no ejecutan apps de 32 bits.
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
             {
                 Debug.Log("[Umbralis] Cambiando la plataforma activa a Android (puede tardar un poco)...");
-                EditorUserBuildSettings.SwitchActiveBuildTargetAsync(BuildTargetGroup.Android, BuildTarget.Android);
+                if (Application.isBatchMode)
+                    EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+                else
+                    EditorUserBuildSettings.SwitchActiveBuildTargetAsync(BuildTargetGroup.Android, BuildTarget.Android);
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log("[Umbralis] Ajustes de Android aplicados: nombre, identificador y orientación LandscapeLeft.");
+            Debug.Log("[Umbralis] Ajustes de Android aplicados: nombre, identificador, orientación LandscapeLeft, IL2CPP/ARM64.");
+        }
+
+        [MenuItem("Umbralis/3. Compilar APK (Builds/Umbralis.apk)")]
+        public static void BuildAndroidApk()
+        {
+            BuildAndroid(BuildOptions.None);
+        }
+
+        [MenuItem("Umbralis/4. Compilar e instalar en el móvil (Build And Run)")]
+        public static void BuildAndRunAndroid()
+        {
+            BuildAndroid(BuildOptions.AutoRunPlayer);
+        }
+
+        private static void BuildAndroid(BuildOptions options)
+        {
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+            {
+                Debug.LogError("[Umbralis] La plataforma activa no es Android. Ejecuta antes 'Umbralis → 2. Aplicar ajustes de Android'.");
+                return;
+            }
+
+            const string output = "Builds/Umbralis.apk";
+            System.IO.Directory.CreateDirectory("Builds");
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = output,
+                target = BuildTarget.Android,
+                options = options,
+            });
+
+            var summary = report.summary;
+            if (summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                Debug.Log($"[Umbralis] APK generado en {output} ({summary.totalSize / (1024 * 1024)} MB).");
+            else
+                Debug.LogError($"[Umbralis] La compilación terminó con {summary.result}: {summary.totalErrors} errores.");
+        }
+
+        // ------------------------------------------------------------------
+        // Puntos de entrada para línea de comandos (-batchmode -executeMethod)
+        // ------------------------------------------------------------------
+
+        /// <summary>Escena + ajustes Android en una sola pasada. Lanzar con -buildTarget Android.</summary>
+        public static void BatchSetup()
+        {
+            BuildCombatScene();
+            ApplyAndroidSettings();
+        }
+
+        /// <summary>Escena + ajustes + APK. Lanzar con -buildTarget Android.</summary>
+        public static void BatchSetupAndBuild()
+        {
+            BatchSetup();
+            BuildAndroidApk();
         }
 
         // ------------------------------------------------------------------
@@ -295,11 +362,17 @@ namespace Umbralis.EditorTools
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        /// <summary>
+        /// Deja CombatPrototype como única escena de compilación. Si solo se
+        /// añadiera al final, la SampleScene de la plantilla (índice 0) sería la
+        /// que arrancase en el móvil.
+        /// </summary>
         private static void AddSceneToBuildSettings()
         {
             var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            if (scenes.Exists(s => s.path == ScenePath)) return;
-            scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            scenes.RemoveAll(s => s.path == ScenePath);
+            scenes.ForEach(s => s.enabled = false);
+            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 

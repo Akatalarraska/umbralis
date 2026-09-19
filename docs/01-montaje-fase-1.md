@@ -39,7 +39,35 @@ mitad derecha = cámara). Para probar dos dedos usa Window → General →
 ## 4. Compilar e instalar
 
 1. Activa *Opciones de desarrollador → Depuración USB* en el móvil.
-2. **File → Build Profiles → Android → Build And Run** con el móvil conectado.
+2. **Umbralis → 4. Compilar e instalar en el móvil** (equivale a File → Build
+   Profiles → Android → Build And Run) con el móvil conectado. **Umbralis → 3.
+   Compilar APK** solo genera `client/Builds/Umbralis.apk` (carpeta ignorada
+   por git) para instalarlo a mano con `adb install -r`.
+
+El backend es IL2CPP + ARM64 (lo fija el paso 3): los móviles recientes ya no
+ejecutan APKs de 32 bits.
+
+## Todo lo anterior sin abrir el editor (batch mode)
+
+Los pasos 2, 3 y 4 tienen puntos de entrada para línea de comandos. Con Unity
+Hub abierto y con sesión iniciada (la licencia Personal se renueva a través del
+Hub; si no, Unity sale con código 198 "No valid Unity Editor license found"):
+
+```
+"C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Unity.exe" -batchmode -nographics -quit ^
+  -projectPath C:\Users\Robert\Desktop\umbralis\client -buildTarget Android ^
+  -executeMethod Umbralis.EditorTools.UmbralisSceneBuilder.BatchSetupAndBuild -logFile build.log
+```
+
+`BatchSetup` hace solo escena + ajustes; `BatchSetupAndBuild` además deja el
+APK en `client/Builds/Umbralis.apk`. Para instalarlo:
+
+```
+adb install -r client\Builds\Umbralis.apk
+```
+
+(`adb` está en `Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools`
+del editor 6000.3.21f1, que es el que tiene el módulo Android instalado.)
 
 ## Qué comprobar en el móvil
 
