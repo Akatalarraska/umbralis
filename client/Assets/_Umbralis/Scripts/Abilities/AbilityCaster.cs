@@ -31,6 +31,8 @@ namespace Umbralis.Abilities
         public Health Health { get; private set; }
         /// <summary>Recurso de clase; null si el personaje no tiene (entonces todo es gratis).</summary>
         public ClassResource Resource { get; private set; }
+        /// <summary>Selección de objetivo; null si el personaje no la tiene.</summary>
+        public TargetSelector Targeting { get; private set; }
         public Team Team => Health.Team;
         public int SlotCount => slots.Length;
         public Vector3 Origin => transform.position + Vector3.up * originHeight;
@@ -42,6 +44,7 @@ namespace Umbralis.Abilities
             Movement = GetComponent<PlayerMovement>();
             Health = GetComponent<Health>();
             Resource = GetComponent<ClassResource>();
+            Targeting = GetComponent<TargetSelector>();
             cooldownEnds = new float[slots.Length];
         }
 
@@ -72,7 +75,10 @@ namespace Umbralis.Abilities
             return ability != null && (Resource == null || Resource.CanSpend(ability.resourceCost));
         }
 
-        /// <summary>Lanzamiento rápido (toque corto): apunta solo al enemigo más cercano.</summary>
+        /// <summary>
+        /// Lanzamiento rápido (toque corto): va al objetivo seleccionado si está a
+        /// tiro; si no hay, al enemigo más cercano en alcance (y lo selecciona).
+        /// </summary>
         public bool TryCastAuto(int slot)
         {
             AbilityDefinition ability = GetAbility(slot);
@@ -80,8 +86,18 @@ namespace Umbralis.Abilities
 
             Vector3 direction = transform.forward;
             Vector3 point = transform.position + direction * ability.range;
+            float reach = ability.range * 1.25f;
 
-            Health target = Health.FindNearestHostile(Team, transform.position, ability.range * 1.25f);
+            Health target = null;
+            if (Targeting != null && Targeting.HasTarget
+                && (Targeting.Current.transform.position - transform.position).sqrMagnitude <= reach * reach)
+                target = Targeting.Current;
+            if (target == null)
+            {
+                target = Health.FindNearestHostile(Team, transform.position, reach);
+                if (target != null && Targeting != null && !Targeting.HasTarget) Targeting.Select(target);
+            }
+
             if (target != null)
             {
                 Vector3 to = target.transform.position - transform.position;

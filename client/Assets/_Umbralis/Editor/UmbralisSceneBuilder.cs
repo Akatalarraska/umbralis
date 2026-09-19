@@ -64,6 +64,7 @@ namespace Umbralis.EditorTools
             CreateHud(out FloatingJoystick joystick, out CameraLookZone lookZone, out Transform hudRoot);
             CreateAbilityBar(hudRoot, player.GetComponent<AbilityCaster>(), player.GetComponent<PlayerDodge>(), aimIndicator);
             CreateStatusHud(hudRoot, player.GetComponent<Health>(), player.GetComponent<ClassResource>());
+            CreateTargeting(hudRoot, player, lookZone);
             CreateEventSystem();
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
 
@@ -239,6 +240,8 @@ namespace Umbralis.EditorTools
             SetFloat(rage, "combatTimeout", 5f);
             SetFloat(rage, "outOfCombatChangePerSecond", -8f);
 
+            root.AddComponent<TargetSelector>();
+
             AbilityCaster caster = root.AddComponent<AbilityCaster>();
             SetArray(caster, "slots", abilities);
 
@@ -343,9 +346,10 @@ namespace Umbralis.EditorTools
 
             var parent = new GameObject("Dummies");
             Vector3[] positions = { new Vector3(0f, 0f, 6f), new Vector3(8f, 0f, -3f), new Vector3(-8f, 0f, -1f) };
-            foreach (Vector3 position in positions)
+            for (int i = 0; i < positions.Length; i++)
             {
-                var root = new GameObject("TrainingDummy");
+                Vector3 position = positions[i];
+                var root = new GameObject($"Muñeco {i + 1}"); // el nombre sale en el panel de objetivo
                 root.transform.SetParent(parent.transform, false);
                 root.transform.position = position;
                 root.transform.rotation = Quaternion.LookRotation(-position.normalized, Vector3.up);
@@ -671,6 +675,57 @@ namespace Umbralis.EditorTools
             SetReference(editable, "highlight", outline);
 
             return go;
+        }
+
+        /// <summary>
+        /// Selección de objetivo: toque en la zona de cámara, anillo bajo el
+        /// objetivo, panel arriba en el centro y botón "Cambiar".
+        /// </summary>
+        private static void CreateTargeting(Transform hudRoot, GameObject player, CameraLookZone lookZone)
+        {
+            TargetSelector selector = player.GetComponent<TargetSelector>();
+
+            TapToTarget tap = player.AddComponent<TapToTarget>();
+            SetReference(tap, "lookZone", lookZone);
+            SetReference(tap, "selector", selector);
+
+            // Anillo en el suelo.
+            Material ringMat = CreateMaterial("TargetRing", new Color(1f, 0.45f, 0.1f));
+            var markerGo = new GameObject("TargetMarker");
+            GameObject ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            ring.name = "Ring";
+            ring.transform.SetParent(markerGo.transform, false);
+            ring.transform.localScale = new Vector3(1.5f, 0.01f, 1.5f);
+            Object.DestroyImmediate(ring.GetComponent<Collider>());
+            ring.GetComponent<Renderer>().sharedMaterial = ringMat;
+            TargetMarker marker = markerGo.AddComponent<TargetMarker>();
+            SetReference(marker, "selector", selector);
+            SetReference(marker, "ring", ring.transform);
+
+            // Panel arriba en el centro + botón de cambiar objetivo a su derecha.
+            var root = new GameObject("TargetHud", typeof(RectTransform));
+            root.transform.SetParent(hudRoot, false);
+            var rt = root.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
+
+            var panel = new GameObject("Panel", typeof(RectTransform));
+            panel.transform.SetParent(root.transform, false);
+            var panelRt = panel.GetComponent<RectTransform>();
+            panelRt.anchorMin = panelRt.anchorMax = panelRt.pivot = new Vector2(0.5f, 1f);
+            panelRt.anchoredPosition = Vector2.zero;
+            panelRt.sizeDelta = Vector2.zero;
+            HudBar bar = CreateHudBar("TargetHealth", panel.transform, new Vector2(-250f, -40f), new Vector2(500f, 44f), new Color(0.9f, 0.25f, 0.2f));
+
+            Button cycle = CreateTextButton("CycleTarget", root.transform, new Vector2(0.5f, 1f), new Vector2(360f, -40f), new Vector2(180f, 50f), "Cambiar");
+
+            TargetHud hud = root.AddComponent<TargetHud>();
+            SetReference(hud, "selector", selector);
+            SetReference(hud, "panel", panel);
+            SetReference(hud, "healthBar", bar);
+            SetReference(hud, "cycleButton", cycle);
+            panel.SetActive(false);
         }
 
         /// <summary>Vida y recurso del jugador, arriba a la izquierda.</summary>
